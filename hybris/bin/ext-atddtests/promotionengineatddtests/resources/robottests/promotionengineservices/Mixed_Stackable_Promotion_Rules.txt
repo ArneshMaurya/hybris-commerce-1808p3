@@ -1,0 +1,110 @@
+ *** Settings ***
+Resource          promotionengine/PromotionEngineServices_Keywords.txt
+Resource          ruleengine/Util_Keywords.txt
+
+*** Test Cases ***
+Test_Apply_Stackable_Promotions_Product_Order_TC_QA_7579
+	[Documentation]		Check two stackable promotions - covered test case QA-7579    
+	...                 https://jira.hybris.com/browse/QA-7579
+	...                 
+	
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rules for ids "order_threshold_fixed_discount_stack product_precentage_discount_stack" with module "promotions-module-junit"
+	
+	# Setting variables
+	${cartId}=    Set Variable    "012012"
+	${productMemCard}=    get product by code "1366053"
+	${productTripod}=	get product by code "23355"
+	
+	# Add to the cart product from Flash Memory category
+	# product_precentage_discount_stack promotion should be triggered 	
+	create cart "${cartId}"
+	
+	add "${productMemCard}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	price "${cartAfterPromo}" should be less than "${cartBeforePromo}" for "1.00"
+	remove product "${productMemCard}" for cart "${cartId}" 
+
+	# Increase quantity for Memory Card from 1 to 3
+	# product_precentage_discount_stack promotion should be triggered 	
+	# order_threshold_fixed_discount_stack promotion should be triggered
+	add "${productMemCard}" to cart "${cartId}"
+	update entry "0" with quantity "3" for cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	price "${cartAfterPromo}" should be less than "${cartBeforePromo}" for "23.00"	
+	remove product "${productMemCard}" for cart "${cartId}"
+	
+	# Add to the cart tripod product
+	# Two promotions should be triggered
+	add "${productMemCard}" to cart "${cartId}"
+	add "${productTripod}" to cart "${cartId}"
+	update entry "0" with quantity "3" for cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	price "${cartAfterPromo}" should be less than "${cartBeforePromo}" for "23.00"	
+
+	# Remove Memory Card
+	# order_threshold_fixed_discount_stack promotion should be triggered
+	remove product "${productMemCard}" for cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	price "${cartAfterPromo}" should be less than "${cartBeforePromo}" for "20.00"
+ 
+ 
+ Test_Apply_Stackable_Promotions_Product_Product_TC_QA_7581
+	[Documentation]		Check two stackable promotions - covered test case QA-7581    
+	...                 https://jira.hybris.com/browse/QA-7581
+	...                 
+	
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rules for ids "product_buy_CF_get_BWF_free_stack product_buy_CT_get_BWF_free_stack" with module "promotions-module-junit"
+	
+	# Setting variables
+	${cartId}=    Set Variable    "012012"
+	${productCF}=    get product by code "779868"
+	${productBW}=	 get product by code "1291399"
+	${productCamcorder}=	get product by code "137220"
+	
+	# Add products to the cart
+	# product_buy_CF_get_BWF_free_stack promotion should be triggered
+	create cart "${cartId}"
+	
+	add "${productCF}" to cart "${cartId}"
+	add "${productBW}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	price "${cartAfterPromo}" should be less than "${cartBeforePromo}" for "12.50"
+	remove product "${productCF}" for cart "${cartId}"
+	remove product "${productBW}" for cart "${cartId}"  
+	evaluate promotion for cart "${cartId}" by promotion engine
+
+	# Increase quantity for B&W Film from 1 to 2
+	# product_buy_CF_get_BWF_free_stack promotion should be triggered
+	add "${productCF}" to cart "${cartId}"
+	add "${productBW}" to cart "${cartId}"
+	update entry "1" with quantity "2" for cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	price "${cartAfterPromo}" should be less than "${cartBeforePromo}" for "12.50"	
+	remove product "${productCF}" for cart "${cartId}"
+	remove product "${productBW}" for cart "${cartId}"  
+	evaluate promotion for cart "${cartId}" by promotion engine
+	
+	# Add Camcorder product to the cart
+	# product_buy_CF_get_BWF_free_stack promotion should be triggered
+	# product_buy_CT_get_BWF_free_stack promotion should be triggered
+	add "${productCF}" to cart "${cartId}"
+	add "${productBW}" to cart "${cartId}"
+	add "${productCamcorder}" to cart "${cartId}"
+	update entry "1" with quantity "2" for cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  ${cartAfterPromo}	15.50
+	price "${cartAfterPromo}" should be less than "${cartBeforePromo}" for "25.00"	
+

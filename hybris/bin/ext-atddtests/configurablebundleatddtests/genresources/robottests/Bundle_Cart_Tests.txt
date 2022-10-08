@@ -1,0 +1,42 @@
+# -----------------------------------------------------------------------
+# [y] hybris Platform
+#
+# Copyright (c) 2018 SAP SE or an SAP affiliate company.  All rights reserved.
+#
+# This software is the confidential and proprietary information of SAP
+# ("Confidential Information"). You shall not disclose such Confidential
+# Information and shall use it only in accordance with the terms of the
+# license agreement you entered into with SAP.
+# -----------------------------------------------------------------------
+
+
+*** Settings ***
+Resource      configurablebundles/Bundle_Keywords.txt
+Resource      commerce/CommerceServices_Keywords.txt
+Resource      commerce/Checkout_Keywords.txt
+Resource      commerce/EntryGroup_Keywords.txt
+
+Test setup    import test data
+
+
+*** Test Cases ***
+Test_NewBundleAddsProductEntry
+    ${entry} =             start bundle "ProductComponent1" from product "PRODUCT01"
+    Should be equal        ${entry.product.code}    PRODUCT01
+    Should not be empty    ${entry.entryGroupNumbers}
+    ${cart} =              get session cart data
+    Should not be empty    ${cart.rootGroups}
+    Should be equal        ${cart.rootGroups[0].groupType.code}    CONFIGURABLEBUNDLE
+    Should be equal        ${cart.rootGroups[0].externalReferenceId}    ParentPackage
+    Should not be empty    ${cart.rootGroups[0].children}
+
+
+Test_ValidateBundle
+    login customer with id "bundle"
+    start bundle "ProductComponent1" from product "PRODUCT01"
+    ${cart} =              get session cart data
+    ${group} =             get entry group with external reference id "PremiumComponent2" from order "${cart}"
+    Should be equal        ${group.erroneous}    ${TRUE}
+    Run keyword and expect error
+    ...    InvalidCartException: Cart is not valid*
+    ...    validate session cart

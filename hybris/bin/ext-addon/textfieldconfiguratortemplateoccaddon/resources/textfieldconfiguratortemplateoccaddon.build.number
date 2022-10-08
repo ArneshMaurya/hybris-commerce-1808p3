@@ -1,0 +1,11 @@
+#Ant properties
+#Thu Jul 05 18:11:23 UTC 2018
+builddate=20180705 1811
+description=textfieldconfiguratortemplateoccaddon
+group.id=de.hybris.platform
+module.name=platform-module
+name=textfieldconfiguratortemplateoccaddon
+releasedate=20180704 1255
+vendor=hybris
+version=18.08
+version.api=18.08.0

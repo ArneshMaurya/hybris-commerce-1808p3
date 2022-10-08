@@ -1,0 +1,29 @@
+# -----------------------------------------------------------------------
+# [y] hybris Platform
+#
+# Copyright (c) 2017 SAP SE or an SAP affiliate company.  All rights reserved.
+#
+# This software is the confidential and proprietary information of SAP
+# ("Confidential Information"). You shall not disclose such Confidential
+# Information and shall use it only in accordance with the terms of the
+# license agreement you entered into with SAP.
+# -----------------------------------------------------------------------
+*** Settings ***
+Library         de.hybris.platform.atddimpex.keywords.ImpexKeywordLibrary
+Library         de.hybris.platform.textfieldconfiguratortemplateatddtests.keywords.TextFieldConfiguratorTemplateKeywordLibrary
+
+
+*** Keywords ***
+for configurationcategory "${conf:[^"]*}" create textfieldconfiguration "${textconf:[^"]*}" with qualifier "${qualifier:[^"]*}"
+    [Documentation]   Creates a textfield configurator for given configuration category
+    @{binding}    create list    textfieldConfiguratorId    ${textconf}    categoryCode    ${conf}    qualifier    ${qualifier}
+    ${templateName}=    Set Variable    impex-templates/textfieldconfiguration/textfieldconfiguration-insert.impex.vm
+    ${impEx}=    generate impex from template    ${templateName}    @{binding}
+    import impex "${impEx}" use template "${templateName}"
+
+to textfieldconfiguration "${textconf:[^"]*}" add label "${label:[^"]*}" with default "${value:[^"]*}"
+    [Documentation]   Adds label and default value for Text Field configuration
+	@{binding}    create list    textfieldConfiguratorId    ${textconf}    label    ${label}    defaultValue    ${value}
+	${templateName}=    Set Variable    impex-templates/textfieldconfiguration/textfieldconfiguration-set.impex.vm
+	${impEx}=    generate impex from template    ${templateName}    @{binding}
+	import impex "${impEx}" use template "${templateName}"

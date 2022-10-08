@@ -1,0 +1,322 @@
+*** Settings ***
+Resource          promotionengine/PromotionEngineServices_Keywords.txt
+Resource          ruleengine/Util_Keywords.txt
+
+*** Test Cases ***
+Test_Apply_Nonstackable_Promotions_Product_Order_TC_QA_7564
+	[Documentation]		Check two nonstackable promotions - covered test case QA-7564     
+	...                 https://jira.hybris.com/browse/QA-7564
+	...                 
+	
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rules for ids "order_threshold_percentage_discount_cart product_buy_x_get_y_free" with module "promotions-module-junit"
+	
+	# Setting variables
+	${cartId}=    Set Variable    "012012"
+	${productCF}=    get product by code "779848"
+	${productBW}=	 get product by code "779866"	
+	
+	# Add to the cart product from Color Film category
+	# Promotion shouldn't trigger 
+	create cart "${cartId}"
+	add "${productCF}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  ${cartAfterPromo}  ${cartBeforePromo}
+
+	# Add to the cart product from Black&White Film category
+	# Promotion shouldn't be triggered 
+	add "${productBW}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  ${cartAfterPromo}  ${cartBeforePromo}
+	
+	# Increase quantity for product from Color Film category from 1 to 3
+	# Promotion shouldn't be triggered
+	update entry "0" with quantity "3" for cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  ${cartAfterPromo}  ${cartBeforePromo}
+
+	# Increase quantity for product from B&W Films category from 1 to 2
+	# Promotion should be triggered, two products B&W should be as free gift
+	update entry "1" with quantity "2" for cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers	${cartBeforePromo}	40.5 
+	Should Be Equal As Numbers  ${cartAfterPromo}	25.5
+	price "${cartAfterPromo}" should be less than "${cartBeforePromo}" for "15.00"
+	
+	
+Test_Apply_Nonstackable_Promotions_Product_Order_TC_QA_7567
+	[Documentation]		Check two nonstackable promotions - covered test case QA-7567 
+	...                 https://jira.hybris.com/browse/QA-7567
+	...                 
+	
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rules for ids "order_threshold_percentage_discount_cart product_buy_x_get_y_free" with module "promotions-module-junit"
+	
+	# Setting variables
+	${cartId}=    Set Variable    "012013"
+	${productCF}=    get product by code "779848"
+	${productBW}=	 get product by code "779866"	
+	
+	# Add to the cart product from Color Film category
+	# Promotion shouldn't trigger 
+	create cart "${cartId}"
+	add "${productCF}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  ${cartAfterPromo}  ${cartBeforePromo}
+
+	# Add to the cart product from Black&White Film category
+	# Promotion shouldn't be triggered 
+	add "${productBW}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  ${cartAfterPromo}  ${cartBeforePromo}
+	
+	# Increase quantity for product from Color Film category from 1 to 30
+	# Promotion should be triggered, 10% discount should be applied
+	update entry "0" with quantity "30" for cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers	${cartBeforePromo}	262.50
+	Should Be Equal As Numbers  ${cartAfterPromo}	236.25
+	price "${cartAfterPromo}" should be less than "${cartBeforePromo}" for "26.25"
+	
+	
+Test_Apply_Nonstackable_Promotions_Product_Order_TC_QA_7568
+	[Documentation]		Check two nonstackable promotions - covered test case QA-7568
+	...                 https://jira.hybris.com/browse/QA-7568
+	...                 
+	
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rules for ids "order_threshold_percentage_discount_cart product_buy_x_get_y_free" with module "promotions-module-junit"
+	
+	# Setting variables
+	${cartId}=    Set Variable    "012013"
+	${productCF}=    get product by code "779848"
+	${productBW}=	 get product by code "779866"	
+	
+	# Add to the cart product from Color Film category
+	# Promotion shouldn't trigger 
+	create cart "${cartId}"
+	add "${productCF}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  ${cartAfterPromo}  ${cartBeforePromo}
+
+	# Add to the cart product from Black&White Film category
+	# Promotion shouldn't be triggered 
+	add "${productBW}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  ${cartAfterPromo}  ${cartBeforePromo}
+	
+	# Increase quantity for product from Color Film category from 1 to 30
+	# Promotion should be triggered, 10% discount should be applied
+	update entry "0" with quantity "30" for cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers	${cartBeforePromo}	262.50
+	Should Be Equal As Numbers  ${cartAfterPromo}	236.25
+	price "${cartAfterPromo}" should be less than "${cartBeforePromo}" for "26.25"
+	
+	# Increase quantity for product from B&W Films category from 1 to 2
+	update entry "1" with quantity "2" for cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers	${cartBeforePromo}	270.00
+	Should Be Equal As Numbers  ${cartAfterPromo}	229.50
+	price "${cartAfterPromo}" should be less than "${cartBeforePromo}" for "40.50"
+	
+	
+Test_Apply_Nonstackable_Promotions_Product_Order_TC_QA_7569
+	[Documentation]		Check two nonstackable promotions - covered test case QA-7569
+	...                 https://jira.hybris.com/browse/QA-7569
+	...                 
+	
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rules for ids "order_threshold_percentage_discount_cart_exclusive product_buy_x_get_y_free_exclusive" with module "promotions-module-junit"
+	
+	# Setting variables
+	${cartId}=    Set Variable    "012013"
+	${productCF}=    get product by code "779848"
+	${productBW}=	 get product by code "779866"	
+	
+	# Add to the cart product from Color Film category
+	# Promotion shouldn't trigger 
+	create cart "${cartId}"
+	add "${productCF}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  ${cartAfterPromo}  ${cartBeforePromo}
+
+	# Add to the cart product from Black&White Film category
+	# Promotion shouldn't be triggered 
+	add "${productBW}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  ${cartAfterPromo}  ${cartBeforePromo}
+	
+	# Increase quantity for product from Color Film category from 1 to 30
+	# Promotion should be triggered, 10% discount should be applied
+	update entry "0" with quantity "30" for cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers	${cartBeforePromo}	262.50
+	Should Be Equal As Numbers  ${cartAfterPromo}	236.25
+	price "${cartAfterPromo}" should be less than "${cartBeforePromo}" for "26.25"
+	
+	# Increase quantity for product from B&W Films category from 1 to 20
+	update entry "1" with quantity "20" for cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers	${cartBeforePromo}	405.00
+	Should Be Equal As Numbers  ${cartAfterPromo}	255.00
+	price "${cartAfterPromo}" should be less than "${cartBeforePromo}" for "150.00"
+	
+	
+Test_Apply_Nonstackable_Promotions_Product_Order_TC_QA_7570
+	[Documentation]		Check two nonstackable promotions - covered test case QA-7570
+	...                 https://jira.hybris.com/browse/QA-7570
+	...                 
+	
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rules for ids "order_threshold_percentage_discount_cart product_buy_x_get_y_free" with module "promotions-module-junit"
+	
+	# Setting variables
+	${cartId}=    Set Variable    "012013"
+	${productCF_Farbelt}=    get product by code "779848"
+	${productCF_Elite}=    	 get product by code "834955"
+	${productBW_BW400_36}=	 get product by code "779866"
+	${productBW_BW400}=	 	 get product by code "1291399"
+	${productBW_BW400_24}=	 get product by code "779864"	
+	
+	# Add to the cart two products from Color Film category
+	# Promotion shouldn't trigger 
+	create cart "${cartId}"
+	
+	add "${productCF_Farbelt}" to cart "${cartId}"
+	add "${productCF_Elite}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  ${cartAfterPromo}  ${cartBeforePromo}
+
+	# Add to the cart two products from Black&White Film category
+	# Promotion shouldn't be triggered 
+	add "${productBW_BW400_36}" to cart "${cartId}"
+	add "${productBW_BW400}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  ${cartAfterPromo}  ${cartBeforePromo}
+	
+	# Increase quantity for product productCF_Farbelt from Color Film category from 1 to 2
+	# Promotion product_buy_x_get_y_free should be triggered
+	# All products from B&W Films category should be for free
+	update entry "0" with quantity "2" for cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers	${cartBeforePromo}	44.50
+	Should Be Equal As Numbers  ${cartAfterPromo}	24.50
+	price "${cartAfterPromo}" should be less than "${cartBeforePromo}" for "20.00"
+	
+	# Add to the cart new product from B&W Films category
+	# Promotion product_buy_x_get_y_free should be triggered
+	# Two products from B&W Films category should be for free - with lowest price
+	add "${productBW_BW400_24}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers	${cartBeforePromo}	32.45
+	Should Be Equal As Numbers  ${cartAfterPromo}	37.00
+	check product "${productBW_BW400_36}" quantity "1" for cart "${cartId}"
+	check product "${productBW_BW400_24}" quantity "1" for cart "${cartId}"
+	price "${cartBeforePromo}" should be less than "${cartAfterPromo}" for "4.55"
+	
+	
+Test_Apply_Nonstackable_Promotions_Product_Order_TC_QA_7571
+	[Documentation]		Check two nonstackable promotions - covered test case QA-7571
+	...                 https://jira.hybris.com/browse/QA-7571
+	...                 
+	
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rules for ids "order_threshold_percentage_discount_cart product_buy_x_get_y_free" with module "promotions-module-junit"
+	
+	# Setting variables
+	${cartId}=    Set Variable    "012013"
+	${productCF_Farbelt}=    get product by code "779848"
+	${productCF_Elite}=    	 get product by code "834955"
+	${productBW_BW400_36}=	 get product by code "779866"
+	${productBW_BW400}=	 	 get product by code "1291399"
+	${productBW_BW400_24}=	 get product by code "779864"	
+	
+	# Add to the cart two products from Color Film category
+	# Promotion shouldn't trigger 
+	create cart "${cartId}"
+	
+	add "${productCF_Farbelt}" to cart "${cartId}"
+	add "${productCF_Elite}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  ${cartAfterPromo}  ${cartBeforePromo}
+
+	# Add to the cart two products from Black&White Film category
+	# Promotion shouldn't be triggered 
+	add "${productBW_BW400_36}" to cart "${cartId}"
+	add "${productBW_BW400}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  ${cartAfterPromo}  ${cartBeforePromo}
+	
+	# Increase quantity for product productCF_Farbelt from Color Film category from 1 to 2
+	# Promotion product_buy_x_get_y_free should be triggered
+	# All products from B&W Films category should be for free
+	update entry "0" with quantity "2" for cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers	${cartBeforePromo}	44.50
+	Should Be Equal As Numbers  ${cartAfterPromo}	24.50
+	price "${cartAfterPromo}" should be less than "${cartBeforePromo}" for "20.00"
+	
+	# Add to the cart new product from B&W Films category
+	# Promotion product_buy_x_get_y_free should be triggered
+	# Two products from B&W Films category should be for free - with lowest price
+	add "${productBW_BW400_24}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers	${cartBeforePromo}	32.45
+	Should Be Equal As Numbers  ${cartAfterPromo}	37.00
+	price "${cartBeforePromo}" should be less than "${cartAfterPromo}" for "4.55"	
+	
+	# Update quantity for products
+	update entry "0" with quantity "20" for cart "${cartId}"
+	update entry "1" with quantity "10" for cart "${cartId}" 
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers	${cartBeforePromo}	257.50
+	Should Be Equal As Numbers  ${cartAfterPromo}	231.75
+	price "${cartAfterPromo}" should be less than "${cartBeforePromo}" for "25.75"
+	
+	# Update quantity for product
+	update entry "3" with quantity "2" for cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers	${cartBeforePromo}	270.00
+	Should Be Equal As Numbers  ${cartAfterPromo}	245.0
+	price "${cartAfterPromo}" should be less than "${cartBeforePromo}" for "25.00"	
+
+	
+	

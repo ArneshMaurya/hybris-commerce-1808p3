@@ -1,0 +1,247 @@
+*** Settings ***
+Resource          promotionengine/PromotionEngineServices_Keywords.txt
+Resource          ruleengine/Util_Keywords.txt
+
+*** Test Cases ***
+# Test without excluded products
+Test_Apply_Promotion_To_Cart_With_Total_Less_Than_250
+	[Documentation]     Try to apply promotion to cart with total value < 250
+	...                 Drools engine doesn't have a proper rule (discount will not be applied)
+	...                 To cart is added only one item with price = 99.85
+	
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "order_threshold_percentage_discount_cart" with module "promotions-module-junit"
+	
+	# Setting variables
+	${cartId}=    Set Variable    "012012"
+	${product}=    get product by code "1934793"
+	
+	# Test
+	create cart "${cartId}"
+	add "${product}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  ${cartAfterPromo}  ${cartBeforePromo}
+    
+# Test without excluded products
+Test_Apply_Promotion_To_Cart_Total_Bigger_250_Three_Same_Products
+	[Documentation]     Apply promotion to cart with total value > 250
+	...                 To cart is added the same product with price = 99.85
+	...                 Promotion applied = 10%
+	
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "order_threshold_percentage_discount_cart" with module "promotions-module-junit"
+	
+	# Setting variables
+	${cartId}=    Set Variable    "112233"
+	${product_01}=    get product by code "1934793"
+	
+	# Test
+	create cart "${cartId}"
+	add "${product_01}" to cart "${cartId}"
+	add "${product_01}" to cart "${cartId}"
+	add "${product_01}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	
+	# $29.96 is 10% off for cart price 3 * $99.85 ($299.55)
+	price "${cartAfterPromo}" should be less than "${cartBeforePromo}" for "29.96"
+
+
+# Test without excluded products
+Test_Apply_Remove_Promotion_To_Cart_Total_Three_Same_Products
+	[Documentation]     Apply promotion to cart with total value > 250
+	...                 To cart is added the same product with price = 99.85
+	...                 Promotion applied = 10%
+	...                 Remove product and recalculate total discount (discount after recalculation = 0)
+	
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "order_threshold_percentage_discount_cart" with module "promotions-module-junit"
+	
+	# Setting variables
+	${cartId}=    Set Variable    "001001"
+	${product}=    get product by code "1934793"
+	
+	# Test
+	create cart "${cartId}"
+	add "${product}" to cart "${cartId}"
+	add "${product}" to cart "${cartId}"
+	add "${product}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	
+	# $29.96 is 10% off for cart price 3 * $99.85 ($299.55)
+	price "${cartAfterPromo}" should be less than "${cartBeforePromo}" for "29.96"
+	remove product "${product}" for cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   ${cartBeforePromo}
+	
+
+Test_Order_Threshold_Free_Coupon_Promotion_To_Cart_With_Total_GreaterEqual_300
+    [Documentation]     Apply free coupon promotion to cart with total value greater than 300
+	...                 To cart is added only one item with price greater than 300
+
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "order_threshold_free_coupon" with module "promotions-module-junit"
+	
+	# Setting variables
+	${cartId}=    Set Variable    "020101"
+	${product1}=    get product by code "1382080"
+	${promotionActionType}=  Set Variable  RuleBasedAddCouponAction
+	
+	# Test
+	create cart "${cartId}"
+	add "${product1}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+    Should Be Equal As Numbers    ${cartBeforePromo}    574.88
+    
+    ${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+    
+    verify cart "${cartId}" has promotion action of type "${promotionActionType}"
+ 
+ Test_Percentage_Discount_When_Product_NOT_In_Cart  
+ 	[Documentation]     A percentage discount is applied to the cart when cart does not contain specific product(2934302)
+ 
+ 	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "product_not_in_cart_percentage_discount" with module "promotions-module-junit"
+	
+	# Setting variables
+	${cartId}=    Set Variable    "020101"
+	${product1}=    get product by code "1382080"
+	${product2}=    get product by code "2934302"
+	
+	
+	# Test
+	#10% discount is applied to cart when cart does not contain 2934302 product
+	create cart "${cartId}"
+	add "${product1}" to cart "${cartId}"
+	
+	${cartBeforePromo}=    get total of "${cartId}"
+    Should Be Equal As Numbers    ${cartBeforePromo}    574.88
+    
+    ${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+  	Should Be Equal As Numbers    ${cartAfterPromo}    517.39
+  	
+  	#check when product one or more units of 2934302 is added to cart, percentage discount is not applied any more
+  	add "${product2}" to cart "${cartId}"
+  	add "${product2}" to cart "${cartId}"
+  	
+	${cartBeforePromo}=    get total of "${cartId}"
+    Should Be Equal As Numbers    ${cartBeforePromo}   1592.64
+    
+    ${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+  	Should Be Equal As Numbers    ${cartAfterPromo}    1592.64
+  	
+Test_Percentage_Discount_When_Product_From_Categories_NOT_in_cart
+ 	[Documentation]     A percentage discount is applied to the cart when cart does not contain products from 576 category
+	
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "products_from_category_not_in_cart_percentage_discount" with module "promotions-module-junit"
+  	
+	# Setting variables
+	${cartId}=    Set Variable    "022222"
+	${productFromCategory576}=    get product by code "1934794"
+	${productNotFromCategory576}=    get product by code "1641905"	
+	
+	# Test for cartId , cart with product not from category 576
+	create cart "${cartId}"
+	add "${productNotFromCategory576}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartBeforePromo}    142.7
+
+	# 20% discount on cartId 
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}    114.16
+	
+	#add product from specified category to cart and check percentage discount is not applied on cart
+	add "${productFromCategory576}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartBeforePromo}    242.55
+	
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+ 	Should Be Equal As Numbers    ${cartAfterPromo}    242.55
+	
+
+Test_Potential_Promotion_Message_Triggered_With_Potential_Product_Bundle_Fixed_Price
+ 	[Documentation]     Potential Promotion message should be shown when cart has product 4812254 and any product from 902 category 
+
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "potential_product_bundle_fixed_price" with module "promotions-module-junit"
+  	
+	# Setting variables
+	${cartId}=    Set Variable    "022222"
+	${productA}=    get product by code "4812254"
+	${productB}=    get product by code "1641905"	
+	
+	${promotionActionType}=  Set Variable  RuleBasedPotentialPromotionMessageAction
+	
+	
+	# Test for cartId , cart with product 4812254 and 1641905 from category 902
+	create cart "${cartId}"
+	add "${productA}" to cart "${cartId}"
+	add "${productB}" to cart "${cartId}"
+	
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	
+	verify cart "${cartId}" has promotion action of type "${promotionActionType}"
+
+
+Test_Apply_Not_Exclusive_Promotions_To_Cart_
+	[Documentation]     Apply 2 cart level promotions of not-exclusive rule groups at the same time
+	
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rules for ids "order_threshold_percentage_discount_cart order_threshold_fixed_discount_cart" with module "promotions-module-junit"
+	
+	# Setting variables
+	${cartId}=    Set Variable    "012015"
+	${product}=    get product by code "1934793"
+	
+	create cart "${cartId}"
+	add "${product}" to cart "${cartId}"
+	update entry "0" with quantity "3" for cart "${cartId}"
+	# 3 x $99.85
+	${cartBeforePromo}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartBeforePromo}    299.55
+	# get applied 10% off first as it priority is 40, then $20 off as it priority is 30   
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}    249.59
+	
+Test_Apply_Exclusive_Promotions_To_Cart_
+	[Documentation]     Try to apply 2 cart level promotions of exclusive rule groups at the same time - only the 1st one triggers
+	
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rules for ids "order_threshold_percentage_discount_cart_exclusive order_threshold_fixed_discount_cart_exclusive" with module "promotions-module-junit"
+	
+	# Setting variables
+	${cartId}=    Set Variable    "012016"
+	${product}=    get product by code "1934793"
+	
+	create cart "${cartId}"
+	add "${product}" to cart "${cartId}"
+	update entry "0" with quantity "3" for cart "${cartId}"
+	# 3 x $99.85
+	${cartBeforePromo}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartBeforePromo}    299.55
+	# get applied 10% off only as it has the highest priority (40)
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}    269.59
+	

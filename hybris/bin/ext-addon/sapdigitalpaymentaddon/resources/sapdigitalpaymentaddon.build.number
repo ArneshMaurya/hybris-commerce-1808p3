@@ -1,0 +1,11 @@
+#Ant properties
+#Wed Jun 27 11:43:02 UTC 2018
+builddate=20180627 1142
+description=sapdigitalpaymentaddon
+group.id=de.hybris.platform
+module.name=platform-module
+name=sapdigitalpaymentaddon
+releasedate=20180215 1941
+vendor=hybris
+version=6.7.0.0
+version.api=6.7.0

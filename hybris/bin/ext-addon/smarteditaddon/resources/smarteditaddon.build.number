@@ -1,0 +1,11 @@
+#Ant properties
+#Sun Jul 08 15:21:25 UTC 2018
+builddate=20180708 1521
+description=smarteditaddon
+group.id=de.hybris.platform
+module.name=platform-module
+name=smarteditaddon
+releasedate=20180704 1255
+vendor=hybris
+version=18.08
+version.api=18.08.0

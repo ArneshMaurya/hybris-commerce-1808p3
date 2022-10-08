@@ -1,0 +1,6 @@
+#parse( "impex-templates/textfield-common-macros.impex.vm" )
+#[[
+
+INSERT_UPDATE TextFieldConfiguratorSetting;id[unique=true];configuratorType(code)[default='TEXTFIELD'];configurationCategory(code, catalogversion(catalog(id[default=$catalog-id]),version[default=$catalog-version]));qualifier;$catalogversion
+]]#
+;${textfieldConfiguratorId};;${categoryCode};${qualifier};

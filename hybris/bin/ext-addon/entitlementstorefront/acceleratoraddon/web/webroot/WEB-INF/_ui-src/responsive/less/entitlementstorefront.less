@@ -1,0 +1,34 @@
+.page-entitlements {
+	.subscriptions-table {
+		tr {
+		    @media (max-width: @screen-sm-max) {
+		        display: block;
+		        td {
+		            display: inline-block;
+		            width: 40%;
+		            padding: 3px 10px;
+		            &:last-child {
+		                text-align: left;
+		            }
+		            &:nth-child(even) {
+		                width: 55%;
+		            }
+		        }
+		    }
+	    }
+		.responsive-table-head {
+			.hidden-xs; 
+			.hidden-sm;
+		}
+		.hidden-cell {
+			.hidden-lg;
+			.hidden-md;
+		}
+	}
+	.accountContentPane .entitlements-item {
+		border-bottom: 1px dotted #a5a5a5;
+	  	padding: 20px 0;
+	  	position: relative;
+	}
+}
+

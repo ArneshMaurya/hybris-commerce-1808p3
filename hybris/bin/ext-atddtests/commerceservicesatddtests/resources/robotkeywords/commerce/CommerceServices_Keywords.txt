@@ -1,0 +1,241 @@
+*** Settings ***
+Resource          impex/Impex_Keywords.txt
+Library           de.hybris.platform.commerceservicesatddtests.keywords.CommerceServicesKeywordLibrary
+
+*** Keywords ***
+
+calculate proper cart index for cartListName "${cartListName}" where 1st expected cart name is "${cart1Name}" and 2nd expected cart name is "${cart2Name}"
+	[Documentation]    Setting the real index value (0 or 1) for 1st and 2nd cart on the cart list. Is needed, because the order of carts on the list is random
+	...                Supports list of 2 carts only
+	...                Returns list indexes ${1stCartIndex} and ${2ndCartIndex} for carts that corresponds to given names for 1st and 2nd cart
+	...                CALL EXAMPLE:
+	...                ${1stCartIndex}    ${2ndCartIndex} =          calculate proper cart index for cartListName "cartList" where 1st expected cart name is "TestCart" and 2nd expected cart name is "TestCart2"
+	${1stCartIndex} =          Set Variable If    '${${cartListName}[0].name}' == '${cart1Name}'    0    1
+	${2ndCartIndex} =          Set Variable If    '${${cartListName}[1].name}' == '${cart2Name}'    1    0
+	[Return]            ${1stCartIndex}    ${2ndCartIndex}
+
+create product "${code:[^"]+}"
+	[Documentation]    Creates a product with the given code
+	@{binding}    create list    productCode    ${code}    unit    ${EMPTY}
+	${templateName}=    Set Variable    impex-templates/product/product-insert.impex.vm
+	${impEx}=    generate impex from template    ${templateName}    @{binding}
+	import impex "${impEx}" use template "${templateName}"
+
+create product "${code:[^"]+}" with unit "${unit:[^"]+}" currency "${currency:[^"]+}" and price "${price:[^"]+}"
+	[Documentation]    Creates a product with the given code
+	@{binding1}    create list    productCode    ${code}    unit     ${unit}
+	${templateName1}=    Set Variable    impex-templates/product/product-insert.impex.vm
+	${impEx1}=    generate impex from template    ${templateName1}    @{binding1}
+	import impex "${impEx1}" use template "${templateName1}"
+	@{binding2}    create list    productCode    ${code}    unit     ${unit}    currency    ${currency}    price    ${price}
+	${templateName2}=    Set Variable    impex-templates/product/pricerow-insert.impex.vm
+	${impEx2}=    generate impex from template    ${templateName2}    @{binding2}
+	import impex "${impEx2}" use template "${templateName2}"
+
+create user price group "${userPriceGroupCode}"
+	[Documentation]    Creates a new UserPriceGroup
+	@{binding}    create list    userPriceGroupCode    ${userPriceGroupCode}
+	${templateName}=    Set Variable    impex-templates/customer/userpricegroup-insert.impex.vm
+	${impEx}=    generate impex from template    ${templateName}    @{binding}
+	import impex "${impEx}" use template "${templateName}"
+
+create and login user "${userId:[^"]+}"
+    [Documentation]   Helper keyword.
+    ...               Creates a new user with given id, configures delivery and payment info and login
+	using api create customer "${userId}"
+	login customer with id "${userId}"
+    set payment and delivery details for current customer
+
+using api create customer "${userUID:[^"]+}"
+   [Documentation]    Creates a customer with the given unique ID. The default currency is set.
+   create customer with hybris api  ${userUID}   1234   mr   Test   User_${userUID}
+   @{binding}    create list    userUID    ${userUID}    userPriceGroupCode    ${EMPTY}    currencyIsocode    ${EMPTY}
+   ${templateName}=    Set Variable    impex-templates/customer/customer-insert.impex.vm
+   ${impEx}=    generate impex from template    ${templateName}    @{binding}
+   import impex "${impEx}" use template "${templateName}"
+
+create customer "${userUID:[^"]+}"
+	[Documentation]    Creates a customer with the given unique ID. The default currency is set.
+	@{binding}    create list    userUID    ${userUID}    userPriceGroupCode    ${EMPTY}    currencyIsocode    ${EMPTY}
+	${templateName}=    Set Variable    impex-templates/customer/customer-insert.impex.vm
+	${impEx}=    generate impex from template    ${templateName}    @{binding}
+	import impex "${impEx}" use template "${templateName}"
+
+create customer "${userUID:[^"]+}" with currency "${currencyIsocode}"
+	[Documentation]    Creates a customer with the given unique ID and currency.
+	@{binding}    create list    userUID    ${userUID}    userPriceGroupCode    ${EMPTY}    currencyIsocode    ${currencyIsocode}
+	${templateName}=    Set Variable    impex-templates/customer/customer-insert.impex.vm
+	${impEx}=    generate impex from template    ${templateName}    @{binding}
+	import impex "${impEx}" use template "${templateName}"
+
+create customer "${userUID:[^"]+}" with user price group "${userPriceGroupCode}"
+	[Documentation]    Creates a customer with the given unique ID and user price group.  The default currency is set.
+	@{binding}    create list    userUID    ${userUID}    userPriceGroupCode    ${userPriceGroupCode}    currencyIsocode    ${EMPTY}
+	${templateName}=    Set Variable    impex-templates/customer/customer-insert.impex.vm
+	${impEx}=    generate impex from template    ${templateName}    @{binding}
+	import impex "${impEx}" use template "${templateName}"
+
+login customer with id "${userUID}"
+	[Documentation]    log in as the given user
+	login    ${userUID}
+
+add product "${productCode}" to cart
+	[Documentation]    Adds the specified product to the cart once
+	add product to cart once   ${productCode}
+
+add "${productNumber}" products "${productCode}" to cart
+	[Documentation]    Adds the specified product to the cart as many times as need (as specified in ${productNumber} parameter)
+	add product to cart    ${productCode}    ${productNumber}
+
+remove product "${productCode}" from cart
+	[Documentation]    Removes the given product from the cart
+	remove product from cart    ${productCode}
+	
+set entry "${entryNumber:[^"]+}" quantity to "${quantity:[^"]+}"
+    [Documentation]     Changes quantity of entry specified by entry number
+    set entry quantity    ${entryNumber}    ${quantity}
+
+delete cart entry "${entryNumber}"
+	[Documentation]    Deletes an entry from the cart
+	delete cart entry    ${entryNumber}
+
+verify that cart total is "${expectedTotal}"
+	[Documentation]    Verifies the master cart total
+	verify cart total	${expectedTotal}
+
+save cart with name "${name:[^"]+}" and description "${description:[^"]+}"
+	[Documentation]    Saves the session cart with the given name and description
+	${savedCart}=    save cart with name and description    ${name}    ${description}
+	[Return]    ${savedCart}
+
+retrieve saved cart with code "${code:[^"]*}"
+	[Documentation]    Retrieves saved cart with given code
+	${savedCart}=    retrieve saved cart with code    ${code}
+	[Return]    ${savedCart}
+
+restore saved cart with code "${code:[^"]+}"
+	[Documentation]    Restores saved cart with given code
+	${restorationData}=    restore saved cart with code    ${code}
+	[Return]    ${restorationData}
+
+save given cart "${cartId:[^"]+}" with name "${name:[^"]+}" and description "${description:[^"]+}"
+	[Documentation]    Saves the given cart with the given name and description
+	${savedCart}=    save given cart with name and description    ${cartId}    ${name}    ${description}
+	[Return]    ${savedCart}
+
+get session cart
+	[Documentation]    Returns the current session cart
+	${sessionCart}=    get current session cart
+	[Return]    ${sessionCart}
+
+get session cart data
+    ${cartData} =    get cart dto
+    [Return]         ${cartData}
+
+get list of saved session carts
+	[Documentation]    Returns saved carts
+	${cartList}=    get list of saved carts    ${null}
+	[Return]    ${cartList}
+
+create new session cart
+	[Documentation]    Removes the current session cart and creates a new session cart
+	${sessionCart}=    remove and create new session cart
+	[Return]    ${sessionCart}
+	    
+verify that date "${date1:[^"]+}" is "${days:[^"]+}" days later than date "${date2:[^"]+}"
+	[Documentation]    Verifies that date1 is n days later than date2
+	verify that date1 is n days later than date2    ${date1}    ${days}    ${date2}
+
+flag cart with code "${cartCode:[^"]+}" for deletion
+	[Documentation]    Flags the saved cart with the given code for deletion. Returns the flagged cart.
+	${flaggedCart}=    flag cart for deletion    ${cartCode}
+	[Return]    ${flaggedCart}
+
+clone saved cart with code "${cartCode:[^"]+}" and set name "${name:[^"]+}" and description "${description:[^"]+}"
+	[Documentation]    Clones the saved cart with the given code and sets the given name and description for the clone. Returns the cloned cart.
+	${clonedCart}=    clone saved cart    ${cartCode}    ${name}    ${description}
+	[Return]    ${clonedCart}
+
+clone saved cart with code "${cartCode:[^"]+}"
+	[Documentation]    Clones the saved cart with the given code. Returns the cloned cart.
+	${clonedCart}=    clone saved cart with code "${cartCode}" and set name "${null}" and description "${null}"
+	[Return]    ${clonedCart}
+
+verify that cart with code "${originalCartCode:[^"]+}" has been cloned properly into cart with code "${clonedCartCode:[^"]+}"
+	[Documentation]    Verifies that the original cart was cloned properly by comparing both carts and their entries.
+	verify cart clone    ${originalCartCode}    ${clonedCartCode}
+	verify cloned cart entries    ${originalCartCode}    ${clonedCartCode}
+
+create configuration category "${code:[^"]+}"
+    [Documentation]   Creates a configuration category
+    @{binding}    create list    configurationCode    ${code}
+    ${templateName}=    Set Variable    impex-templates/category/configurationcategory-insert.impex.vm
+    ${impEx}=    generate impex from template    ${templateName}    @{binding}
+    import impex "${impEx}" use template "${templateName}"
+
+add product "${productCode:[^"]+}" to category "${configurationCode:[^"]+}"
+	[Documentation]    Adds given configuration to the product
+    @{binding}    create list    productCode    ${productCode}    configurationCode    ${configurationCode}
+    ${templateName}=    Set Variable    impex-templates/category/product-insert.impex.vm
+    ${impEx}=    generate impex from template    ${templateName}    @{binding}
+    import impex "${impEx}" use template "${templateName}"
+
+get configurations for entry "${number:[^"]+}" of ${order}
+    [Documentation]    Gets configuration for order enrty with given number
+    ${configurationInfos} =    get configurations for order entry    ${number}    ${order}
+    [Return]    ${configurationInfos}
+
+get configuration for entry "${entry:[^"]+}" with label "${label:[^"]+}"
+    [Documentation]    Gets configuration for order enrty with given number with label
+    ${configurationInfo} =    get configuration for order entry    ${entry}    ${label}
+    [Return]    ${configurationInfo}
+
+get entry "${number:[0-9]+}" from order "${order:[^"]+}"
+    [Documentation]    Find entry with given entry number
+    ${result} =        get entry by number    ${order}   ${number}
+    [return]           ${result}
+
+set product "${productCode:[^"]+}" in stock for warehouse "${warehouseCode:[^"]+}"
+	[Documentation]    Forces specific product to be in stock for specific warehouse
+	@{binding}    create list    productCode    ${productCode}    warehouse    ${warehouseCode}
+	${templateName}=    Set Variable    impex-templates/product/stocklevel-insert.impex.vm
+	${impEx}=    generate impex from template    ${templateName}    @{binding}
+	import impex "${impEx}" use template "${templateName}"
+
+set configuration info of entry "${entry:[^"]+}" with label "${label:[^"]+}" to "${value:[^"]+}"
+    [Documentation]   Change single setting of complex product
+    update configuration info    ${entry}    ${label}    ${value}
+
+create point of service "${pointOfService:[^"]+}"
+    [Documentation]  Create point of service
+    @{binding}    create list    pointOfService    ${pointOfService}
+	${templateName}=    Set Variable    impex-templates/product/pointofservice-insert.impex.vm
+	${impEx}=    generate impex from template    ${templateName}    @{binding}
+	import impex "${impEx}" use template "${templateName}"
+
+add warehouse "${warehouse:[^"]+}" to point of service "${pointOfService:[^"]+}"
+    [Documentation]  Set list of warehoses for given point of service
+	@{binding}    create list    pointOfService    ${pointOfService}    warehouse    ${warehouse}
+	${templateName}=    Set Variable    impex-templates/product/pointofservice-set-warehouses.impex.vm
+	${impEx}=    generate impex from template    ${templateName}    @{binding}
+	import impex "${impEx}" use template "${templateName}"
+
+create point of service "${pointOfService:[^"]+}" with warehouse "${warehouse:[^"]+}"
+    [Documentation]  Create configured point of service
+    create point of service "${pointOfService}"
+    add warehouse "${warehouse}" to point of service "${pointOfService}"
+
+pickup "${quantity:[^"]+}" product "${productCode:[^"]+}" in store "${pointOfService:[^"]+}"
+    [Documentation]  Add product to the cart by click "Pick Up in Store"
+    pickup product to cart    ${productCode}    ${quantity}    ${pointOfService}
+
+set product "${productCode:[^"]+}" stock levels at "${stock:[^"]+}" for warehouse "${warehouse:[^"]+}"
+    [Documentation]  Set product stock levels at specific amount for specified warehouse
+    @{binding}    create list    productCode    ${productCode}    stock    ${stock}    warehouse    ${warehouse}
+	${templateName}=    Set Variable    impex-templates/product/stocklevel-amount-insert.impex.vm
+	${impEx}=    generate impex from template    ${templateName}    @{binding}
+	import impex "${impEx}" use template "${templateName}"
+
+set entry "${entry:[^"]+}" point of service to "${pointOfService:[^"]+}"
+    [Documentation]  Set point of service specified by code to order entry
+    update entry with point of service    ${entry}    ${pointOfService}

@@ -1,0 +1,11 @@
+#Ant properties
+#Fri Jun 29 01:54:58 UTC 2018
+builddate=20180629 0154
+description=selectivecartaddon
+group.id=de.hybris.platform
+module.name=platform-module
+name=selectivecartaddon
+releasedate=20180621 1840
+vendor=hybris
+version=18.08
+version.api=18.08.0

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+ [y] hybris Platform
+
+ Copyright (c) 2018 SAP SE or an SAP affiliate company.  All rights reserved.
+
+ This software is the confidential and proprietary information of SAP
+ ("Confidential Information"). You shall not disclose such Confidential
+ Information and shall use it only in accordance with the terms of the
+ license agreement you entered into with SAP.
+-->
+<project name="promotionengineatddtests_buildcallbacks">
+
+	<macrodef name="promotionengineatddtests_after_clean">
+		<sequential>
+			<atdd_clean ext="promotionengineatddtests"/>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="promotionengineatddtests_before_build">
+		<sequential>
+			<mkdir dir="${ext.promotionengineatddtests.path}/resources/robottests"/>
+			<mkdir dir="${ext.promotionengineatddtests.path}/resources/robotkeywords"/>
+			<mkdir dir="${ext.promotionengineatddtests.path}/genresources"/>
+			<mkdir dir="${ext.promotionengineatddtests.path}/testsrc"/>
+			<mkdir dir="${ext.promotionengineatddtests.path}/classes"/>
+			<atdd_generate_proxies ext="promotionengineatddtests"/>
+		</sequential>
+	</macrodef>
+	
+</project>

@@ -1,0 +1,6 @@
+#parse( "impex-templates/common-macros.impex.vm" )
+#[[
+
+INSERT_UPDATE Product;code[unique=true];$supercategories[mode='append'];$catalogversion
+]]#
+;${productCode};${configurationCode};

@@ -1,0 +1,11 @@
+#Ant properties
+#Fri Jun 29 12:00:11 UTC 2018
+builddate=20180629 1200
+description=orderselfserviceaddon
+group.id=de.hybris.platform
+module.name=platform-module
+name=orderselfserviceaddon
+releasedate=20180626 1840
+vendor=hybris
+version=18.08
+version.api=18.08.0

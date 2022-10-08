@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+ [y] hybris Platform
+
+ Copyright (c) 2017 SAP SE or an SAP affiliate company.
+ All rights reserved.
+
+ This software is the confidential and proprietary information of SAP
+ ("Confidential Information"). You shall not disclose such Confidential
+ Information and shall use it only in accordance with the terms of the
+ license agreement you entered into with SAP.
+-->
+<project name="customerticketingc4cintegrationatddtests_buildcallbacks">
+
+	<macrodef name="customerticketingc4cintegrationatddtests_after_clean">
+		<sequential>
+			<atdd_clean ext="customerticketingc4cintegrationatddtests"/>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="customerticketingc4cintegrationatddtests_before_build">
+		<sequential>
+			<mkdir dir="${ext.customerticketingc4cintegrationatddtests.path}/resources/robottests"/>
+			<mkdir dir="${ext.customerticketingc4cintegrationatddtests.path}/resources/robotkeywords"/>
+			<mkdir dir="${ext.customerticketingc4cintegrationatddtests.path}/genresources"/>
+			<mkdir dir="${ext.customerticketingc4cintegrationatddtests.path}/testsrc"/>
+			<mkdir dir="${ext.customerticketingc4cintegrationatddtests.path}/classes"/>
+			<atdd_generate_proxies ext="customerticketingc4cintegrationatddtests"/>
+		</sequential>
+	</macrodef>
+	
+</project>

@@ -1,0 +1,6 @@
+#parse( "impex-templates/common-macros.impex.vm" )
+#[[
+
+INSERT_UPDATE PointOfService;name[unique=true];type(code);latitude;longitude;geocodeTimestamp[dateformat=dd-MM-yyyy];basestore(uid)[default=testStore];features(code)
+]]#
+;${pointOfService};STORE;41,8013;-88,27789;29-04-2025;

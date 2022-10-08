@@ -1,0 +1,11 @@
+#Ant properties
+#Fri Jul 06 09:12:40 UTC 2018
+builddate=20180706 0912
+description=saprevenueclouddpaddon
+group.id=de.hybris.platform
+module.name=platform-module
+name=saprevenueclouddpaddon
+releasedate=20180628 1840
+vendor=hybris
+version=18.08
+version.api=18.08.0

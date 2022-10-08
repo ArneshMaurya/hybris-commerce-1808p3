@@ -1,0 +1,417 @@
+# -----------------------------------------------------------------------
+# [y] hybris Platform
+#
+# Copyright (c) 2017 SAP SE or an SAP affiliate company.  All rights reserved.
+#
+# This software is the confidential and proprietary information of SAP
+# ("Confidential Information"). You shall not disclose such Confidential
+# Information and shall use it only in accordance with the terms of the
+# license agreement you entered into with SAP.
+# -----------------------------------------------------------------------
+*** Settings ***
+Resource          commerce/SampleData_Keywords.txt
+Resource          commerce/CommerceServices_Keywords.txt
+Resource          commerce/Checkout_Keywords.txt
+Resource          textfieldconfiguratortemplateatddtests/TextFieldConfiguratorTemplate_Keywords.txt
+
+Test Setup        import commerce checkout sample data
+
+*** Variables ***
+${userId} =    testuser@saved-carts.com
+${configurationCategoryCode} =    testConfigurationCategory
+
+*** Test Cases ***
+Test_Preconfigured_Product_Text_Field
+	[Documentation]    Checks happy path for configurable product
+	create product "P1" with unit "pieces" currency "USD" and price "120"
+	create configuration category "testConfigurationCategory"
+	add product "P1" to category "testConfigurationCategory"
+	for configurationcategory "testConfigurationCategory" create textfieldconfiguration "testTextFieldConf" with qualifier "testTextQualifier"
+	to textfieldconfiguration "testTextFieldConf" add label "fontSize" with default "12"
+	set product "P1" in stock for warehouse "warehouse"
+	create and login user "${userId}"
+	add product "P1" to cart
+	${cart} =    get session cart data
+	verify list size equals   ${cart.entries}    1
+	verify that cart total is "120"
+	${order} =    do checkout for current customer
+	${entry} =    get entry "0" from order "${order}"
+	${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+	Should Be Equal      ${configuration.configurationValue}    12
+
+
+Test_Change_Configuration_Product_Text_Field
+    create product "A" with unit "pieces" currency "USD" and price "120"
+    create configuration category "testConfigurationCategory"
+    add product "A" to category "testConfigurationCategory"
+  	for configurationcategory "testConfigurationCategory" create textfieldconfiguration "testTextFieldConf" with qualifier "testTextQualifier"
+  	to textfieldconfiguration "testTextFieldConf" add label "fontSize" with default "12"
+    set product "A" in stock for warehouse "warehouse"
+	create and login user "${userId}"
+  	add product "A" to cart
+  	${cart} =            get session cart data
+	${entry} =           get entry "0" from order "${cart}"
+	${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+	Should Be Equal      ${configuration.configurationValue}    12
+	set configuration info of entry "${entry}" with label "fontSize" to "20"
+	${order} =           do checkout for current customer
+	${entry} =           get entry "0" from order "${order}"
+    ${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+    Should Be Equal      ${configuration.configurationValue}    20
+
+
+Test_Preconfigured_Out_Of_Stock_Product_Text_Field
+    create product "P1" with unit "pieces" currency "USD" and price "120"
+    create configuration category "testConfigurationCategory"
+    add product "P1" to category "testConfigurationCategory"
+   	for configurationcategory "testConfigurationCategory" create textfieldconfiguration "testTextFieldConf" with qualifier "testTextQualifier"
+    to textfieldconfiguration "testTextFieldConf" add label "fontSize" with default "12"
+    create and login user "${userId}"
+    add product "P1" to cart
+    ${cart}=    get session cart data
+    verify list size equals   ${cart.entries}    0
+
+
+#Test_Preconfigured_Product_Text_Field_Buy_Online_Pickup_In_Store
+#	create product "P1" with unit "pieces" currency "USD" and price "120"
+#    create configuration category "testConfigurationCategory"
+#    add product "P1" to category "testConfigurationCategory"
+#   	for configurationcategory "testConfigurationCategory" create textfieldconfiguration "testTextFieldConf" with qualifier "testTextQualifier"
+#    to textfieldconfiguration "testTextFieldConf" add label "fontSize" with default "12"
+#  	set product "P1" in stock for warehouse "warehouse"
+#    create and login user "${userId}"
+#    create point of service "POS" with warehouse "warehouse"
+#    pickup "1" product "P1" in store "POS"
+#    ${cart} =    get session cart data
+#	verify list size equals   ${cart.entries}    1
+#	verify that cart total is "120"
+#	${order} =    do checkout for current customer
+#	${entry} =    get entry "0" from order "${order}"
+#	Should Not Be Equal    ${entry}    ${null}
+#	Should Not Be Equal    ${entry.deliveryPointOfService}    ${null}
+#	Should Be Equal      ${entry.deliveryPointOfService.name}    POS
+#	${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+#	Should Not Be Equal    ${configuration}    ${null}
+#	Should Be Equal      ${configuration.configurationValue}    12
+
+Test_Preconfigured_Empty_Configuration_Product_Text_Field
+    create product "P1" with unit "pieces" currency "USD" and price "120"
+    create configuration category "testConfigurationCategory"
+    add product "P1" to category "testConfigurationCategory"
+    for configurationcategory "testConfigurationCategory" create textfieldconfiguration "testTextFieldConf" with qualifier "testTextQualifier"
+    to textfieldconfiguration "testTextFieldConf" add label "fontSize" with default ""
+    set product "P1" in stock for warehouse "warehouse"
+    create and login user "${userId}"
+    add product "P1" to cart
+    ${cart}=    get session cart data
+    verify list size equals   ${cart.entries}    1
+    verify that cart total is "120"
+    run keyword and expect error
+    ...           InvalidCartException: Cart is not valid*
+    ...           validate cart
+	${entry} =    get entry "0" from order "${cart}"
+	set configuration info of entry "${entry}" with label "fontSize" to "12"
+	validate cart
+
+Test_Preconfigured_Out_Of_Stock_Back_In_Stock_Product_Text_Field
+    create product "P1" with unit "pieces" currency "USD" and price "120"
+    create configuration category "testConfigurationCategory"
+    add product "P1" to category "testConfigurationCategory"
+   	for configurationcategory "testConfigurationCategory" create textfieldconfiguration "testTextFieldConf" with qualifier "testTextQualifier"
+    to textfieldconfiguration "testTextFieldConf" add label "fontSize" with default "12"
+    create and login user "${userId}"
+    add product "P1" to cart
+    ${cart}=    get session cart data
+	verify list size equals   ${cart.entries}    0
+    set product "P1" in stock for warehouse "warehouse"
+    add product "P1" to cart
+    ${cart}=    get session cart data
+	verify list size equals   ${cart.entries}    1
+	verify that cart total is "120"
+	${order} =    do checkout for current customer
+	${entry} =    get entry "0" from order "${order}"
+	Should Not Be Equal    ${entry}    ${null}
+	${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+	Should Not Be Equal    ${configuration}    ${null}
+	Should Be Equal      ${configuration.configurationValue}    12
+	Should Be Equal  "${entry.quantity}"    "1"
+
+#Test_Preconfigured_Out_Of_Stock_One_Available_Product_Text_Field
+#    create product "P1" with unit "pieces" currency "USD" and price "120"
+#    create configuration category "testConfigurationCategory"
+#    add product "P1" to category "testConfigurationCategory"
+#   	for configurationcategory "testConfigurationCategory" create textfieldconfiguration "testTextFieldConf" with qualifier "testTextQualifier"
+#    to textfieldconfiguration "testTextFieldConf" add label "fontSize" with default "12"
+#    create and login user "${userId}"
+#    set product "P1" stock levels at "1" for warehouse "warehouse"
+#    add product "P1" to cart
+#    ${cart}=    get session cart data
+#	verify list size equals   ${cart.entries}    1
+#    add product "P1" to cart
+#    ${cart}=    get session cart data
+#	verify list size equals   ${cart.entries}    1
+#	verify that cart total is "120"
+#	${order} =    do checkout for current customer
+#	${entry} =    get entry "0" from order "${order}"
+#	Should Not Be Equal    ${entry}    ${null}
+#	${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+#	Should Not Be Equal    ${configuration}    ${null}
+#	Should Be Equal      ${configuration.configurationValue}    12
+#	Should Be Equal  "${entry.quantity}"    "1"
+
+Test_Change_Default_Configuration_Product_Text_Field
+    create product "A" with unit "pieces" currency "USD" and price "120"
+    create configuration category "testConfigurationCategory"
+    add product "A" to category "testConfigurationCategory"
+  	for configurationcategory "testConfigurationCategory" create textfieldconfiguration "testTextFieldConf" with qualifier "testTextQualifier"
+  	to textfieldconfiguration "testTextFieldConf" add label "fontSize" with default "12"
+    set product "A" in stock for warehouse "warehouse"
+	create and login user "${userId}"
+  	add product "A" to cart
+  	${cart} =            get session cart data
+	${entry} =           get entry "0" from order "${cart}"
+	${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+	Should Be Equal      ${configuration.configurationValue}    12
+  	to textfieldconfiguration "testTextFieldConf" add label "fontSize" with default "20"
+  	${cart} =            get session cart data
+	${entry} =           get entry "0" from order "${cart}"
+    ${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+    Should Be Equal      ${configuration.configurationValue}    12
+
+Test_Add_Product_Two_Times_Same_Configuration
+    create product "A" with unit "pieces" currency "USD" and price "120"
+    create configuration category "testConfigurationCategory"
+    add product "A" to category "testConfigurationCategory"
+  	for configurationcategory "testConfigurationCategory" create textfieldconfiguration "testTextFieldConf" with qualifier "testTextQualifier"
+  	to textfieldconfiguration "testTextFieldConf" add label "fontSize" with default "12"
+    set product "A" in stock for warehouse "warehouse"
+	create and login user "${userId}"
+  	add product "A" to cart
+  	add product "A" to cart
+  	${cart} =            get session cart data
+	verify list size equals   ${cart.entries}    2
+	${entry} =           get entry "0" from order "${cart}"
+	${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+	Should Be Equal      ${configuration.configurationValue}    12
+	${entry} =           get entry "1" from order "${cart}"
+	${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+	Should Be Equal      ${configuration.configurationValue}    12
+
+Test_Add_Product_Two_Times_Different_Configurations
+    create product "A" with unit "pieces" currency "USD" and price "120"
+    create configuration category "testConfigurationCategory"
+    add product "A" to category "testConfigurationCategory"
+  	for configurationcategory "testConfigurationCategory" create textfieldconfiguration "testTextFieldConf" with qualifier "testTextQualifier"
+  	to textfieldconfiguration "testTextFieldConf" add label "fontSize" with default "12"
+    set product "A" in stock for warehouse "warehouse"
+	create and login user "${userId}"
+  	add product "A" to cart
+  	${cart} =            get session cart data
+	verify list size equals   ${cart.entries}    1
+	${entry} =           get entry "0" from order "${cart}"
+	set configuration info of entry "${entry}" with label "fontSize" to "20"
+  	add product "A" to cart
+  	${cart} =            get session cart data
+	verify list size equals   ${cart.entries}    2
+	${entry} =           get entry "0" from order "${cart}"
+	${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+	Should Be Equal      ${configuration.configurationValue}    20
+	${entry} =           get entry "1" from order "${cart}"
+	${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+	Should Be Equal      ${configuration.configurationValue}    12
+
+Test_Add_Product_Two_Times_Update_With_Same_Configuration
+    create product "A" with unit "pieces" currency "USD" and price "120"
+    create configuration category "testConfigurationCategory"
+    add product "A" to category "testConfigurationCategory"
+  	for configurationcategory "testConfigurationCategory" create textfieldconfiguration "testTextFieldConf" with qualifier "testTextQualifier"
+  	to textfieldconfiguration "testTextFieldConf" add label "fontSize" with default "12"
+    set product "A" in stock for warehouse "warehouse"
+	create and login user "${userId}"
+  	add product "A" to cart
+  	${cart} =            get session cart data
+	verify list size equals   ${cart.entries}    1
+	${entry} =           get entry "0" from order "${cart}"
+	set configuration info of entry "${entry}" with label "fontSize" to "20"
+  	add product "A" to cart
+	set configuration info of entry "${entry}" with label "fontSize" to "12"
+  	${cart} =            get session cart data
+	verify list size equals   ${cart.entries}    2
+	${entry} =           get entry "0" from order "${cart}"
+	${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+	Should Be Equal      ${configuration.configurationValue}    12
+	${entry} =           get entry "1" from order "${cart}"
+	${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+	Should Be Equal      ${configuration.configurationValue}    12
+
+Test_Add_Different_Products_Same_Configuration
+    create product "P1" with unit "pieces" currency "USD" and price "120"
+    create product "P2" with unit "pieces" currency "USD" and price "120"
+    create configuration category "testConfigurationCategory"
+    add product "P1" to category "testConfigurationCategory"
+    add product "P2" to category "testConfigurationCategory"
+  	for configurationcategory "testConfigurationCategory" create textfieldconfiguration "testTextFieldConf" with qualifier "testTextQualifier"
+  	to textfieldconfiguration "testTextFieldConf" add label "fontSize" with default "12"
+    set product "P1" in stock for warehouse "warehouse"
+    set product "P2" in stock for warehouse "warehouse"
+	create and login user "${userId}"
+  	add product "P1" to cart
+  	add product "P2" to cart
+  	${cart} =            get session cart data
+	verify list size equals   ${cart.entries}    2
+	${entry} =           get entry "0" from order "${cart}"
+	${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+	Should Be Equal      ${entry.product.code}    P1
+	Should Be Equal      ${configuration.configurationValue}    12
+	${entry} =           get entry "1" from order "${cart}"
+	${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+	Should Be Equal      ${entry.product.code}    P2
+	Should Be Equal      ${configuration.configurationValue}    12
+
+Test_Add_Product_With_Configuration_And_Quantity
+	create product "A" with unit "pieces" currency "USD" and price "120"
+	create configuration category "testConfigurationCategory"
+	add product "A" to category "testConfigurationCategory"
+	for configurationcategory "testConfigurationCategory" create textfieldconfiguration "testTextFieldConf" with qualifier "testTextQualifier"
+	to textfieldconfiguration "testTextFieldConf" add label "fontSize" with default "12"
+	set product "A" in stock for warehouse "warehouse"
+	create and login user "${userId}"
+	add "3" products "A" to cart
+	${cart} =    get session cart data
+	verify list size equals   ${cart.entries}    1
+	verify that cart total is "360"
+	${order} =    do checkout for current customer
+	${entry} =    get entry "0" from order "${order}"
+	${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+	Should Be Equal      ${configuration.configurationValue}    12
+	Should Be Equal      "${entry.quantity}"  "3"
+
+#Test_Add_Product_Update_Point_Of_Service
+#    create product "A" with unit "pieces" currency "USD" and price "120"
+#    create configuration category "testConfigurationCategory"
+#    add product "A" to category "testConfigurationCategory"
+#  	for configurationcategory "testConfigurationCategory" create textfieldconfiguration "testTextFieldConf" with qualifier "testTextQualifier"
+#  	to textfieldconfiguration "testTextFieldConf" add label "fontSize" with default "12"
+#  	set product "A" in stock for warehouse "warehouse"
+#    create and login user "${userId}"
+#    create point of service "POS1" with warehouse "warehouse"
+#    create point of service "POS2" with warehouse "warehouse"
+#    pickup "1" product "A" in store "POS1"
+#  	${cart} =            get session cart data
+#	verify list size equals   ${cart.entries}    1
+#	${entry} =           get entry "0" from order "${cart}"
+#	${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+#	Should Be Equal      ${configuration.configurationValue}    12
+#	Should Be Equal      ${entry.deliveryPointOfService.name}    POS1
+#    set entry "${entry}" point of service to "POS2"
+#    verify that cart total is "120"
+#	${order} =    do checkout for current customer
+#    verify list size equals   ${order.entries}    1
+#	${entry} =           get entry "0" from order "${order}"
+#	${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+#	Should Be Equal      ${configuration.configurationValue}    12
+#	Should Be Equal      ${entry.deliveryPointOfService.name}    POS2
+
+#Test_Add_Products_Different_Points_Of_Service
+#    create product "A" with unit "pieces" currency "USD" and price "120"
+#    create configuration category "testConfigurationCategory"
+#    add product "A" to category "testConfigurationCategory"
+#  	for configurationcategory "testConfigurationCategory" create textfieldconfiguration "testTextFieldConf" with qualifier "testTextQualifier"
+#  	to textfieldconfiguration "testTextFieldConf" add label "fontSize" with default "12"
+#  	set product "A" in stock for warehouse "warehouse"
+#    create and login user "${userId}"
+#    create point of service "POS1" with warehouse "warehouse"
+#    create point of service "POS2" with warehouse "warehouse"
+#    pickup "1" product "A" in store "POS1"
+#    pickup "1" product "A" in store "POS2"
+#    verify that cart total is "240"
+#	${order} =    do checkout for current customer
+#	verify list size equals   ${order.entries}    2
+#	${entry} =           get entry "0" from order "${order}"
+#	${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+#	Should Be Equal      ${configuration.configurationValue}    12
+#	Should Be Equal      ${entry.deliveryPointOfService.name}    POS1
+#	${entry} =           get entry "1" from order "${order}"
+#	${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+#	Should Be Equal      ${configuration.configurationValue}    12
+#	Should Be Equal      ${entry.deliveryPointOfService.name}    POS2
+
+Test_Remove_Product_With_Configuration
+	create product "A" with unit "pieces" currency "USD" and price "120"
+	create configuration category "testConfigurationCategory"
+	add product "A" to category "testConfigurationCategory"
+	for configurationcategory "testConfigurationCategory" create textfieldconfiguration "testTextFieldConf" with qualifier "testTextQualifier"
+	to textfieldconfiguration "testTextFieldConf" add label "fontSize" with default "12"
+	set product "A" in stock for warehouse "warehouse"
+	create and login user "${userId}"
+	add product "A" to cart
+  	${cart} =            get session cart data
+	verify list size equals   ${cart.entries}    1
+	delete cart entry "0"
+  	${cart} =            get session cart data
+	verify list size equals   ${cart.entries}    0
+
+Test_Add_Configured_And_Standart_Product_Remove_Configured
+  	create product "P1" with unit "pieces" currency "USD" and price "120"
+  	create product "P2" with unit "pieces" currency "USD" and price "100"
+  	create configuration category "testConfigurationCategory"
+  	add product "P1" to category "testConfigurationCategory"
+  	for configurationcategory "testConfigurationCategory" create textfieldconfiguration "testTextFieldConf" with qualifier "testTextQualifier"
+  	to textfieldconfiguration "testTextFieldConf" add label "fontSize" with default "12"
+  	set product "P1" in stock for warehouse "warehouse"
+  	set product "P2" in stock for warehouse "warehouse"
+  	create and login user "${userId}"
+  	add product "P1" to cart
+  	add product "P2" to cart
+  	${cart} =            get session cart data
+	verify list size equals   ${cart.entries}    2
+	${entry} =           get entry "0" from order "${cart}"
+	${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+	Should Be Equal      ${entry.product.code}    P1
+	Should Be Equal      ${configuration.configurationValue}    12
+	${entry} =           get entry "1" from order "${cart}"
+	Should Be Equal      ${entry.product.code}    P2
+    delete cart entry "0"
+  	${cart} =            get session cart data
+	verify list size equals   ${cart.entries}    1
+	${entry} =           get entry "0" from order "${cart}"
+	Should Be Equal      ${entry.product.code}    P2
+
+Test_Add_Two_Differently_Configured_Products_Remove_One
+  	create product "A" with unit "pieces" currency "USD" and price "120"
+  	create configuration category "testConfigurationCategory"
+  	add product "A" to category "testConfigurationCategory"
+  	for configurationcategory "testConfigurationCategory" create textfieldconfiguration "testTextFieldConf" with qualifier "testTextQualifier"
+  	to textfieldconfiguration "testTextFieldConf" add label "fontSize" with default "12"
+  	set product "A" in stock for warehouse "warehouse"
+  	create and login user "${userId}"
+  	add product "A" to cart
+  	${cart} =            get session cart data
+	${entry} =           get entry "0" from order "${cart}"
+	set configuration info of entry "${entry}" with label "fontSize" to "20"
+	add product "A" to cart
+	delete cart entry "0"
+ 	${cart} =            get session cart data
+	verify list size equals   ${cart.entries}    1
+	${entry} =           get entry "0" from order "${cart}"
+	${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+	Should Be Equal      ${configuration.configurationValue}    12
+
+Test_Add_Two_Products_Same_Configuration_Remove_One
+  	create product "A" with unit "pieces" currency "USD" and price "120"
+  	create configuration category "testConfigurationCategory"
+  	add product "A" to category "testConfigurationCategory"
+  	for configurationcategory "testConfigurationCategory" create textfieldconfiguration "testTextFieldConf" with qualifier "testTextQualifier"
+  	to textfieldconfiguration "testTextFieldConf" add label "fontSize" with default "12"
+  	set product "A" in stock for warehouse "warehouse"
+  	create and login user "${userId}"
+  	add product "A" to cart
+  	add product "A" to cart
+  	${cart} =            get session cart data
+	verify list size equals   ${cart.entries}    2
+	delete cart entry "0"
+ 	${cart} =            get session cart data
+	verify list size equals   ${cart.entries}    1
+	${entry} =           get entry "0" from order "${cart}"
+	${configuration} =   get configuration for entry "${entry}" with label "fontSize"
+	Should Be Equal      ${configuration.configurationValue}    12

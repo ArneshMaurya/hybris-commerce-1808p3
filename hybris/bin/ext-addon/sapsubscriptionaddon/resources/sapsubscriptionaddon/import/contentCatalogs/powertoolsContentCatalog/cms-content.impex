@@ -1,0 +1,130 @@
+# -----------------------------------------------------------------------
+# [y] hybris Platform
+#
+# Copyright (c) 2017 SAP SE or an SAP affiliate company.
+# All rights reserved.
+#
+# This software is the confidential and proprietary information of SAP
+# ("Confidential Information"). You shall not disclose such Confidential
+# Information and shall use it only in accordance with the terms of the
+# license agreement you entered into with SAP.
+# -----------------------------------------------------------------------
+
+$contentCatalog=powertoolsContentCatalog
+$contentCV=catalogVersion(CatalogVersion.catalog(Catalog.id[default=$contentCatalog]),CatalogVersion.version[default=Staged])[default=$contentCatalog:Staged]
+$contentCatalogName=Powertools Content Catalog
+$productCatalog=powertoolsProductCatalog
+$productCatalogName=Powertools Product Catalog
+$productCV=catalogVersion(catalog(id[default=$productCatalog]),version[default='Staged'])[unique=true,default=$productCatalog:Staged]
+$picture=media(code, $contentCV);
+$image=image(code, $contentCV);
+$media=media(code, $contentCV);
+$page=page(uid, $contentCV);
+$contentPage=contentPage(uid, $contentCV);
+$product=product(code, $productCV)
+$category=category(code, $productCV)
+$addonExtensionName=sapsubscriptionaddon
+$jarResourceCms=jar:de.hybris.platform.sap.sapsubscriptionaddon.constants.SapsubscriptionaddonConstants&/sapsubscriptionaddon/import/cockpits/cmscockpit/$contentCatalog
+$lang=en
+
+
+#Subscription ProductAddToCart Component
+INSERT_UPDATE SubscriptionProductAddToCartComponent;$contentCV[unique=true];uid[unique=true];name;actions(uid,$contentCV);&componentRef
+;;SubscriptionAddToCart;Subscription Product Add To Cart;AddToCartAction,PickUpInStoreAction,ShareOnSocialNetworkAction;SubscriptionAddToCart
+
+#Subscription search results
+INSERT_UPDATE SubscriptionSearchResultsGridComponent;$contentCV[unique=true];uid[unique=true];name;actions(uid,$contentCV);&componentRef
+;;SubscriptionSearchResultsGrid;Search Result Grid Component for Subscription Products;ListPickUpInStoreAction,ListAddToCartAction;SubscriptionSearchResultsGrid
+INSERT_UPDATE SubscriptionSearchResultsListComponent;$contentCV[unique=true];uid[unique=true];name;actions(uid,$contentCV);&componentRef
+;;SubscriptionSearchResultsList;Search Result List Component for Subscription Products;ListPickUpInStoreAction,ListAddToCartAction;SubscriptionSearchResultsList
+INSERT_UPDATE SubscriptionProductListComponent;$contentCV[unique=true];uid[unique=true];name;actions(uid,$contentCV);&componentRef
+;;SubscriptionProductList;List Component for Subscription Products;ListPickUpInStoreAction,ListAddToCartAction;SubscriptionProductList
+INSERT_UPDATE SubscriptionProductGridComponent;$contentCV[unique=true];uid[unique=true];name;actions(uid,$contentCV);&componentRef
+;;SubscriptionProductGridComponent;Subscription Product Grid Component;ListPickUpInStoreAction,ListAddToCartAction,ListOrderFormAction;SubscriptionProductGridComponent
+
+
+
+INSERT_UPDATE ApplicableCmsActionsTypeForCmsComponent;target(code)[unique=true];source(code)[unique=true];
+;SubscriptionProductAddToCartComponent;PickUpInStoreAction;
+;SubscriptionProductAddToCartComponent;AddToCartAction;
+;SubscriptionProductAddToCartComponent;ShareOnSocialNetworkAction;
+;SubscriptionSearchResultsGridComponent;ListPickUpInStoreAction;
+;SubscriptionSearchResultsGridComponent;ListAddToCartAction;
+;SubscriptionSearchResultsListComponent;ListPickUpInStoreAction;
+;SubscriptionSearchResultsListComponent;ListAddToCartAction;
+;SubscriptionProductListComponent;ListPickUpInStoreAction;
+;SubscriptionProductListComponent;ListAddToCartAction;
+;SubscriptionProductGridComponent;ListPickUpInStoreAction;
+;SubscriptionProductGridComponent;ListAddToCartAction;
+
+
+
+# My subscription page preview
+INSERT_UPDATE Media;$contentCV[unique=true];code[unique=true];realfilename;@media[translator=de.hybris.platform.impex.jalo.media.MediaDataTranslator];mime[default='image/jpeg'];altText;folder(qualifier)[default='images']
+;;subscriptions-preview;SubscriptionsPage.png;$jarResourceCms/SubscriptionsPage.png;image/png;hybris Accelerator;
+;;subscription-preview;SubscriptionPage.png;$jarResourceCms/SubscriptionPage.png;image/png;hybris Accelerator;
+
+## Configure page for subscriptions
+INSERT_UPDATE ContentPage;$contentCV[unique=true];uid[unique=true];name;masterTemplate(uid,$contentCV);label;defaultPage[default='true'];approvalStatus(code)[default='approved'];homepage[default='false']
+;;subscriptions;Manage My Subscriptions;AccountPageTemplate;/my-account/subscriptions
+;;subscription;Subscription Details Page;AccountPageTemplate;subscription
+
+# Preview pages
+UPDATE ContentPage;$contentCV[unique=true];uid[unique=true];previewImage(code, $contentCV)
+;;subscriptions;subscriptions-preview
+;;subscription;subscription-preview
+
+# ContentSlot
+INSERT_UPDATE ContentSlot;$contentCV[unique=true];uid[unique=true];name;active;cmsComponents(&componentRef);;;
+;;SideContent-subscriptions;Side Content Slot for My Subscriptions Listing;true;;;;
+;;BodyContent-subscriptions;Body Content Slot for My Subscriptions Listing;true;AccountSubscriptionComponent;;;
+;;SideContent-subscription;Side Content Slot for Subscription Details;true;;;;
+;;BodyContent-subscription;Body Content Slot for Subscription Details;true;AccountSubscriptionDetailsComponent;;;
+;;AddToCartSlot;;true;SubscriptionAddToCart
+;;SearchResultsGridSlot;Search Result Grid Slot for Search List;true;SubscriptionSearchResultsGrid;;;
+;;SearchResultsListSlot;Search Result List Slot for Search List;true;SubscriptionSearchResultsList;;;
+;;ProductListSlot;Product List Slot for Product List;true;SubscriptionProductList;;;
+;;ProductGridSlot;Product Grid Slot for Product List;true;SubscriptionProductGridComponent;;;
+
+
+
+# ContentSlotForPage
+INSERT_UPDATE ContentSlotForPage;$contentCV[unique=true];uid[unique=true];position[unique=true];page(uid,$contentCV)[unique=true][default='subscriptions'];contentSlot(uid,$contentCV)[unique=true];;;
+;;SideContent-subscriptions;SideContent;;SideContent-subscriptions;;;
+;;BodyContent-subscriptions;BodyContent;;BodyContent-subscriptions;;;
+
+INSERT_UPDATE ContentSlotForPage;$contentCV[unique=true];uid[unique=true];position[unique=true];page(uid,$contentCV)[unique=true][default='subscription'];contentSlot(uid,$contentCV)[unique=true];;;
+;;SideContent-subscription;SideContent;;SideContent-subscription;;;
+;;BodyContent-subscription;BodyContent;;BodyContent-subscription;;;
+
+# JSP Components
+INSERT_UPDATE JspIncludeComponent;$contentCV[unique=true];uid[unique=true];name;page;actions(uid,$contentCV);&componentRef
+;;AccountSubscriptionComponent;Account My Subscriptions Component;/WEB-INF/views/addons/$addonExtensionName/responsive/pages/account/accountSubscriptionsPage.jsp;;AccountSubscriptionComponent
+;;AccountSubscriptionDetailsComponent;Account Subscription Component;/WEB-INF/views/addons/$addonExtensionName/responsive/pages/account/accountSubscriptionPage.jsp;;AccountSubscriptionDetailsComponent
+
+# CMS Link Components
+INSERT_UPDATE CMSLinkComponent;$contentCV[unique=true];uid[unique=true];name;url;&linkRef;&componentRef;target(code)[default='sameWindow']
+;;SubscriptionsLink;SubscriptionsLink;/my-account/subscriptions;SubscriptionsLink;SubscriptionsLink;
+
+
+# CMS Navigation Nodes (children of my account)
+INSERT_UPDATE CMSNavigationNode;uid[unique=true];$contentCV[unique=true];name;parent(uid, $contentCV);links(&linkRef);&nodeRef
+;SubscriptionsNavNode;;Subscription History;MyAccountNavNode;;SubscriptionsNavNode
+
+# Create cms navigation entry for nvaigation child nodes
+INSERT_UPDATE CMSNavigationEntry;uid[unique=true];$contentCV[unique=true];name;navigationNode(&nodeRef);item(&linkRef);
+;SubscriptionsNavNodeEntry;;SubscriptionsNavNodeEntry;SubscriptionsNavNode;SubscriptionsLink;
+
+# CMS Link Components
+UPDATE CMSLinkComponent;$contentCV[unique=true];uid[unique=true];linkName[lang=$lang]
+;;SubscriptionsLink;"Subscriptions"
+
+# CMS Navigation Nodes
+UPDATE CMSNavigationNode;$contentCV[unique=true];uid[unique=true];title[lang=$lang]
+;;SubscriptionsNavNode;"Subscriptions"
+
+
+
+
+
+

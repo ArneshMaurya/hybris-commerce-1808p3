@@ -1,0 +1,11 @@
+#Ant properties
+#Sun Jul 08 14:14:04 UTC 2018
+builddate=20180708 1413
+description=cmsoccaddon
+group.id=de.hybris.platform
+module.name=platform-module
+name=cmsoccaddon
+releasedate=20180706 0604
+vendor=hybris
+version=18.08
+version.api=18.08.0

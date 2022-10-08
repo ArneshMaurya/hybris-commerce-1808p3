@@ -1,0 +1,11 @@
+#Ant properties
+#Thu Jul 26 08:50:05 UTC 2018
+builddate=20180726 0850
+description=profiletagaddon
+group.id=de.hybris.platform
+module.name=platform-module
+name=profiletagaddon
+releasedate=20180611 1841
+vendor=hybris
+version=18.08
+version.api=18.08.0

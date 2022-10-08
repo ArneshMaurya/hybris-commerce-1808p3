@@ -1,0 +1,11 @@
+#Ant properties
+#Wed Jul 04 01:52:41 UTC 2018
+builddate=20180704 0152
+description=chinesestoreaddon
+group.id=de.hybris.platform
+module.name=platform-module
+name=chinesestoreaddon
+releasedate=20180626 1840
+vendor=hybris
+version=18.08
+version.api=18.08.0

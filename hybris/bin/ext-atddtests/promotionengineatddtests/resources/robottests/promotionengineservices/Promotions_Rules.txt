@@ -1,0 +1,533 @@
+*** Settings ***
+Resource          promotionengine/PromotionEngineServices_Keywords.txt
+Resource          ruleengine/Util_Keywords.txt
+
+*** Test Cases ***
+Test_Apply_Free_Gift_For_Complex_Bundle_USD
+	[Documentation]     Apply a free gift to the cart for a complex bundle
+	...                 Buy any digital compact camera (categoryCode: 576) OR any DSLR camera from the list (product codes: 2934302, 2934303, 1438465)
+	...                 AND buy any camera lense (categoryCode: 588)
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "product_bundle_free_gift" with module "promotions-module-junit"
+	
+	${dslrCamera1}=    get product by code "2934302"
+	${digitalCamera1}=    get product by code "325414"
+	${cameraLense1}=    get product by code "493683"
+	${freeGift}=    get product by code "1641905"
+    create cart "020005"
+	add "${dslrCamera1}" to cart "020005"
+	${cartBeforePromo1}=    get total of "020005"
+	LOG    ${cartBeforePromo1}
+	Should Be Equal As Numbers    ${cartBeforePromo1}    508.88
+	${cartAfterPromo1}=    evaluate promotion for cart "020005" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo1}    508.88
+	check product "${freeGift}" quantity "0" for cart "020005"
+	add "${cameraLense1}" to cart "020005"
+	${cartBeforePromo2}=    get total of "020005"
+	LOG    ${cartBeforePromo2}
+	Should Be Equal As Numbers    ${cartBeforePromo2}    627.33
+	${cartAfterPromo2}=    evaluate promotion for cart "020005" by promotion engine
+	LOG    ${cartAfterPromo2}
+	Should Be Equal As Numbers    ${cartAfterPromo2}    627.33
+	check product "${freeGift}" quantity "1" for cart "020005"
+	remove product "${dslrCamera1}" for cart "020005"
+	${cartAfterPromo3}=    evaluate promotion for cart "020005" by promotion engine
+	check product "${freeGift}" quantity "0" for cart "020005"
+	Should Be Equal As Numbers    ${cartAfterPromo3}    118.45
+	add "${digitalCamera1}" to cart "020005"
+	${cartBeforePromo4}=    get total of "020005"
+	LOG    ${cartBeforePromo4}
+	Should Be Equal As Numbers    ${cartBeforePromo4}    265.49
+	${cartAfterPromo5}=    evaluate promotion for cart "020005" by promotion engine
+	LOG    ${cartAfterPromo5}
+	Should Be Equal As Numbers    ${cartAfterPromo5}    265.49
+	check product "${freeGift}" quantity "1" for cart "020005"
+	add "${digitalCamera1}" to cart "020005"
+	add "${cameraLense1}" to cart "020005"
+	${cartBeforePromo6}=    get total of "020005"
+	LOG    ${cartBeforePromo6}
+	Should Be Equal As Numbers    ${cartBeforePromo6}    530.98
+	${cartAfterPromo6}=    evaluate promotion for cart "020005" by promotion engine
+	LOG    ${cartAfterPromo6}
+	Should Be Equal As Numbers    ${cartAfterPromo6}    530.98
+	check product "${freeGift}" quantity "1" for cart "020005"
+
+
+Test_Apply_Free_Gift_For_Complex_Bundle_JPY
+	[Documentation]     Apply a free gift to the cart for a complex bundle
+	...                 Buy any digital compact camera (categoryCode: 576) OR any DSLR camera from the list (product codes: 2934302, 2934303, 1438465)
+	...                 AND buy any camera lense (categoryCode: 588)
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "product_bundle_free_gift" with module "promotions-module-junit"
+	
+	${dslrCamera1}=    get product by code "2934302"
+	${digitalCamera1}=    get product by code "325414"
+	${cameraLense1}=    get product by code "493683"
+	${freeGift}=    get product by code "1641905"
+    create cart "050004" for currency "JPY"
+	add "${dslrCamera1}" to cart "050004"
+	${cartBeforePromo1}=    get total of "050004"
+	LOG    ${cartBeforePromo1}
+	Should Be Equal As Numbers    ${cartBeforePromo1}    43350
+	${cartAfterPromo1}=    evaluate promotion for cart "050004" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo1}    43350
+	check product "${freeGift}" quantity "0" for cart "050004"
+	add "${cameraLense1}" to cart "050004"
+	${cartBeforePromo2}=    get total of "050004"
+	LOG    ${cartBeforePromo2}
+	Should Be Equal As Numbers    ${cartBeforePromo2}    53440
+	${cartAfterPromo2}=    evaluate promotion for cart "050004" by promotion engine
+	LOG    ${cartAfterPromo2}
+	Should Be Equal As Numbers    ${cartAfterPromo2}    53440
+	check product "${freeGift}" quantity "1" for cart "050004"
+	remove product "${dslrCamera1}" for cart "050004"
+	${cartAfterPromo3}=    evaluate promotion for cart "050004" by promotion engine
+	check product "${freeGift}" quantity "0" for cart "050004"
+	Should Be Equal As Numbers    ${cartAfterPromo3}    10090
+	add "${digitalCamera1}" to cart "050004"
+	${cartBeforePromo4}=    get total of "050004"
+	LOG    ${cartBeforePromo4}
+	Should Be Equal As Numbers    ${cartBeforePromo4}    22610
+	${cartAfterPromo5}=    evaluate promotion for cart "050004" by promotion engine
+	LOG    ${cartAfterPromo5}
+	Should Be Equal As Numbers    ${cartAfterPromo5}    22610
+	check product "${freeGift}" quantity "1" for cart "050004"
+	add "${digitalCamera1}" to cart "050004"
+	add "${cameraLense1}" to cart "050004"
+	${cartBeforePromo6}=    get total of "050004"
+	LOG    ${cartBeforePromo6}
+	Should Be Equal As Numbers    ${cartBeforePromo6}    45220
+	${cartAfterPromo6}=    evaluate promotion for cart "050004" by promotion engine
+	LOG    ${cartAfterPromo6}
+	Should Be Equal As Numbers    ${cartAfterPromo6}    45220
+	check product "${freeGift}" quantity "1" for cart "050004"
+
+Test_Apply_Fixed_Price_For_Product_Promotion
+	[Documentation]     Apply special target price on selected product
+	...                 Buy Canon PowershotA480 Digital compact camera for $60
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "fixedPriceForPowershotA480-src" with module "promotions-module-junit"
+	${powershotA480}=    get product by code "1934793"
+	${anotherCanonCompact}=    get product by code "1934794"
+	${sonyCompact}=    get product by code "23210"
+    create cart "030002"
+	add "${powershotA480}" to cart "030002"
+	add "${powershotA480}" to cart "030002"
+	add "${anotherCanonCompact}" to cart "030002"
+	add "${sonyCompact}" to cart "030002"
+	${cartBeforePromo}=    get total of "030002"
+	LOG    ${cartBeforePromo}
+	Should Be Equal As Numbers    ${cartBeforePromo}    409.55
+	${cartAfterPromo}=    evaluate promotion for cart "030002" by promotion engine
+	LOG    ${cartAfterPromo}
+	Should Be Equal As Numbers    ${cartAfterPromo}    329.85
+	remove product "${powershotA480}" for cart "030002"
+	evaluate promotion for cart "030002" by promotion engine
+	${cartAfterPromotedProductsRemoved}=    get total of "030002"
+	LOG    ${cartAfterPromotedProductsRemoved}
+	Should Be Equal As Numbers    ${cartAfterPromotedProductsRemoved}    209.85
+
+	
+Test_Apply_Percentage_Discount_For_Product_Promotion
+	[Documentation]     A percentage discount is applied on every qualifying item from a list of products
+	...                 10% off on EOS 450D (productCode: 1382080) but not another Canon products or other brands
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "percentageDiscountForEOS450D-src" with module "promotions-module-junit"
+	${eos450D}=    get product by code "1382080"
+	${anotherCanon}=    get product by code "1934794"
+	${sonyCompact}=    get product by code "23210"
+    create cart "040001"
+	add "${eos450D}" to cart "040001"
+	add "${eos450D}" to cart "040001"
+	add "${anotherCanon}" to cart "040001"
+	add "${sonyCompact}" to cart "040001"
+	${cartBeforePromo}=    get total of "040001"
+	LOG    ${cartBeforePromo}
+	Should Be Equal As Numbers    ${cartBeforePromo}    1359.61
+	${cartAfterPromo}=    evaluate promotion for cart "040001" by promotion engine
+	LOG    ${cartAfterPromo}
+	Should Be Equal As Numbers    ${cartAfterPromo}    1244.63
+	remove product "${eos450D}" for cart "040001"
+	evaluate promotion for cart "040001" by promotion engine
+	${cartAfterPromotedProductsRemoved}=    get total of "040001"
+	LOG    ${cartAfterPromotedProductsRemoved}
+	Should Be Equal As Numbers    ${cartAfterPromotedProductsRemoved}    209.85
+
+Test_Apply_Percentage_Discount_Excluding_GroupType_For_Product_Promotion
+    [Documentation]     A percentage discount is applied on every qualifying item from a list of products
+    ...                 10% off on EOS 450D (productCode: 1382080) and Sony Compact (productCode: 23210) excluding those that are part of SAMPLEGROUPTYPE
+    import electronicsstore sampledata
+    import sourcerule data
+    compile source rule for id "percentageDiscount_excluding_SAMPLE_GROUPTYPE" with module "promotions-module-junit"
+
+    ${eos450D}=    get product by code "1382080"
+    ${sonyCompact}=    get product by code "23210"
+    create cart "040002"
+    add "${eos450D}" to cart "040002"
+    add "${sonyCompact}" to cart "040002"
+
+    update entry "1" with group number "1" for cart "040002"
+    add entry group with number "1" and type "SAMPLEGROUPTYPE" to cart "040002"
+
+    ${cartBeforePromo}=    get total of "040002"
+    LOG    ${cartBeforePromo}
+    Should Be Equal As Numbers    ${cartBeforePromo}    684.88
+    ${cartAfterPromo}=    evaluate promotion for cart "040002" by promotion engine
+    LOG    ${cartAfterPromo}
+    Should Be Equal As Numbers    ${cartAfterPromo}    627.39
+
+Test_Apply_Customer_Specific_Percentage_Discount
+	[Documentation]     A percentage discount is applied to the cart for the specified customer group
+	...					Employees (groupName: employeePromotionGroup) get 10% off on cart total
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "target_user_group_percentage_discount_cart" with module "promotions-module-junit"
+
+	create customer "employee" with user group "employeePromotionGroup"
+
+	create cart "050001"
+	set cart "050001" to user with id "employee"
+	${powershotA480}=    get product by code "1934793"
+	${eos450D}=    get product by code "1382080"
+	add "${powershotA480}" to cart "050001"
+	add "${eos450D}" to cart "050001"
+	
+	${cartBeforePromo}=    get total of "050001"
+	LOG    ${cartBeforePromo}
+	Should Be Equal As Numbers    ${cartBeforePromo}    674.73
+	${cartAfterPromo}=    evaluate promotion for cart "050001" by promotion engine
+	LOG    ${cartAfterPromo}
+	Should Be Equal As Numbers    ${cartAfterPromo}    607.26
+	
+Test_Apply_Customer_Specific_Percentage_Discount_For_Not_Group_Member
+	[Documentation]     A percentage discount is applied to the cart for the specified customer group ONLY
+	...					customers that are not Employees (groupName: employeePromotionGroup) don't get 10% off on cart total
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "target_user_group_percentage_discount_cart" with module "promotions-module-junit"
+
+	create customer "not_employee" with user group "anotherGroup"
+
+	create cart "050002"
+	set cart "050002" to user with id "not_employee"
+	${powershotA480}=    get product by code "1934793"
+	${eos450D}=    get product by code "1382080"
+	add "${powershotA480}" to cart "050002"
+	add "${eos450D}" to cart "050002"
+	
+	${cartBeforePromo}=    get total of "050002"
+	LOG    ${cartBeforePromo}
+	Should Be Equal As Numbers    ${cartBeforePromo}    674.73
+	${cartAfterPromo}=    evaluate promotion for cart "050002" by promotion engine
+	LOG    ${cartAfterPromo}
+	Should Be Equal As Numbers    ${cartAfterPromo}    674.73
+	
+Test_Apply_Customer_Specific_Percentage_Discount_JPY
+	[Documentation]     A percentage discount is applied to the cart for the specified customer group
+	...					Employees (groupName: employeePromotionGroup) get 10% off on cart total. Check for JPY currency.
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "target_user_group_percentage_discount_cart" with module "promotions-module-junit"
+
+	create customer "employee" with user group "employeePromotionGroup"
+
+	create cart "050003" for currency "JPY"
+	set cart "050003" to user with id "employee"
+	${powershotA480}=    get product by code "1934793"
+	${eos450D}=    get product by code "1382080"
+	add "${powershotA480}" to cart "050003"
+	add "${eos450D}" to cart "050003"
+	
+	${cartBeforePromo}=    get total of "050003"
+	LOG    ${cartBeforePromo}
+	Should Be Equal As Numbers    ${cartBeforePromo}    57470
+	${cartAfterPromo}=    evaluate promotion for cart "050003" by promotion engine
+	LOG    ${cartAfterPromo}
+	Should Be Equal As Numbers    ${cartAfterPromo}    51723
+		
+Test_Order_Threshold_Free_Gift_Promo_USD
+	[Documentation]     Order total over 500 USD 
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "order_threshold_free_gift" with module "promotions-module-junit"
+	
+	${tripodFreeGift}=    get product by code "1687508"
+	${slrCamera}=    get product by code "1934406"
+	create cart "040005"
+	
+	add "${slrCamera}" to cart "040005"
+	${cartAfterPromo1}=    evaluate promotion for cart "040005" by promotion engine
+	check product "${tripodFreeGift}" quantity "0" for cart "040005"
+	Should Be Equal As Numbers    ${cartAfterPromo1}    452.88
+	
+	add "${slrCamera}" to cart "040005"
+	${cartAfterPromo2}=    evaluate promotion for cart "040005" by promotion engine
+	check product "${tripodFreeGift}" quantity "1" for cart "040005"
+	Should Be Equal As Numbers    ${cartAfterPromo2}    905.76
+	
+	remove product "${slrCamera}" for cart "040005"
+	${cartAfterPromo2}=    evaluate promotion for cart "040005" by promotion engine
+	check product "${tripodFreeGift}" quantity "0" for cart "040005"
+	Should Be Equal As Numbers    ${cartAfterPromo1}    452.88
+
+Test_Apply_Customer_Specific_Fixed_Discount_For_Cart_Threshold
+	[Documentation]     A fixed discount is applied to the cart for the specified customer group when the order threshold is exceeded
+	...					All registered customers (anyone but anonymous) get $5 off cart for order above $50
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "target_user_fixed_discount_cart" with module "promotions-module-junit"
+
+	create customer "customer" with user group "customergroup"
+
+	create cart "070001"
+	set cart "070001" to user with id "customer"
+	${KingstonSD2GB}=    get product by code "443175"
+	${powershotA480}=    get product by code "1934793"
+	${eos450D}=    get product by code "1382080"
+
+	add "${KingstonSD2GB}" to cart "070001"
+
+	evaluate promotion for cart "070001" by promotion engine
+	${cartTotal1}=    get total of "070001"
+	Should Be Equal As Numbers    ${cartTotal1}    6.04
+	
+	add "${powershotA480}" to cart "070001"
+	add "${eos450D}" to cart "070001"
+	
+	${cartTotal2}=    get total of "070001"
+	Should Be Equal As Numbers    ${cartTotal2}    680.77
+
+	evaluate promotion for cart "070001" by promotion engine
+	${cartTotal3}=    get total of "070001"
+	Should Be Equal As Numbers    ${cartTotal3}    675.77
+
+Test_Apply_Customer_Specific_Fixed_Discount_For_Cart_Threshold_For_Anonymous
+	[Documentation]     A fixed discount is applied to the cart for the specified customer group when the order threshold is exceeded
+	...					Try to get discount by not registered customer (anonymous)
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "target_user_group_percentage_discount_cart" with module "promotions-module-junit"
+
+
+	create cart "070002"
+	set cart "070002" to user with id "anonymous"
+	${powershotA480}=    get product by code "1934793"
+	${eos450D}=    get product by code "1382080"
+
+	add "${powershotA480}" to cart "070002"
+	add "${eos450D}" to cart "070002"
+	
+	${cartTotal1}=    get total of "070002"
+	Should Be Equal As Numbers    ${cartTotal1}    674.73
+
+	evaluate promotion for cart "070002" by promotion engine
+	${cartTotal2}=    get total of "070002"
+	Should Be Equal As Numbers    ${cartTotal2}    674.73	
+	
+Test_Order_Threshold_Percentage_Discount_Cart
+	[Documentation]     Get total 10% off all orders over $250
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "order_threshold_percentage_discount_cart" with module "promotions-module-junit"
+
+	create cart "080001"
+	${powershotA480}=    get product by code "1934793"
+	add "${powershotA480}" to cart "080001"
+	add "${powershotA480}" to cart "080001"
+	add "${powershotA480}" to cart "080001"
+	${cartTotal1}=    get total of "080001"
+	Should Be Equal As Numbers    ${cartTotal1}    299.55
+	
+	evaluate promotion for cart "080001" by promotion engine
+	${cartTotal2}=    get total of "080001"
+	Should Be Equal As Numbers    ${cartTotal2}    269.59
+	
+Test_Change_Delivery_Mode_Order_Threshold
+	[Documentation]     Buy over 100 USD and get free shipping
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "order_threshold_change_delivery_mode" with module "promotions-module-junit"
+
+	${product1}=    get product by code "1934793"
+    create cart "020002"
+
+	add "${product1}" to cart "020002"
+	evaluate promotion for cart "020002" by promotion engine
+	delivery mode of cart "020002" should not be set
+
+	add "${product1}" to cart "020002"
+	evaluate promotion for cart "020002" by promotion engine
+	${deliveryModeAfterPromo}=    get delivery mode for cart "020002"
+	Should Be Equal As Strings    ${deliveryModeAfterPromo}    free-standard-shipping
+	
+	remove product "${product1}" for cart "020002"
+	evaluate promotion for cart "020002" by promotion engine
+	delivery mode of cart "020002" should not be set
+
+Test_Change_Delivery_Mode_Order_Threshold_Keeping_Old_Delivery_Mode
+	[Documentation]     Buy over 100 USD and get free shipping.
+	...					Check that origianl delivery mode set back after promotion not applied anymore.
+
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "order_threshold_change_delivery_mode" with module "promotions-module-junit"
+
+	${product1}=    get product by code "1934793"
+    create cart "020003"
+    set delivery mode "standard-net" for cart "020003"
+
+	add "${product1}" to cart "020003"
+	evaluate promotion for cart "020003" by promotion engine
+	${deliveryModeBeforePromo}=    get delivery mode for cart "020003"
+	Should Be Equal As Strings    ${deliveryModeBeforePromo}    standard-net
+
+	add "${product1}" to cart "020003"
+	evaluate promotion for cart "020003" by promotion engine
+	${deliveryModeAfterPromo}=    get delivery mode for cart "020003"
+	Should Be Equal As Strings    ${deliveryModeAfterPromo}    free-standard-shipping
+	
+	remove product "${product1}" for cart "020003"
+	evaluate promotion for cart "020003" by promotion engine
+	${deliveryModeAfterPromoCancelled}=    get delivery mode for cart "020003"
+	Should Be Equal As Strings    ${deliveryModeAfterPromoCancelled}    standard-net
+
+Test_Order_Threshold_Free_Gift_Promos_Not_Exclusive_Rule_Groups
+	[Documentation]     Order total over 500 USD 
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rules for ids "order_threshold_free_gift order_threshold_free_gift2" with module "promotions-module-junit"
+	
+	${tripodFreeGift}=    get product by code "1687508"
+	${anotherFreeGift}=    get product by code "2938457"
+	${slrCamera}=    get product by code "1934406"
+	create cart "040006"
+	
+	add "${slrCamera}" to cart "040006"
+	${cartAfterPromo1}=    evaluate promotion for cart "040006" by promotion engine
+	check product "${tripodFreeGift}" quantity "0" for cart "040006"
+	check product "${anotherFreeGift}" quantity "1" for cart "040006"
+	Should Be Equal As Numbers    ${cartAfterPromo1}    452.88
+	
+	add "${slrCamera}" to cart "040006"
+	${cartAfterPromo2}=    evaluate promotion for cart "040006" by promotion engine
+	check product "${tripodFreeGift}" quantity "1" for cart "040006"
+	check product "${anotherFreeGift}" quantity "1" for cart "040006"
+	Should Be Equal As Numbers    ${cartAfterPromo2}    905.76
+	
+	remove one item of product "${slrCamera}" for cart "040006"
+	${cartAfterPromo2}=    evaluate promotion for cart "040006" by promotion engine
+	check product "${slrCamera}" quantity "1" for cart "040006"
+	check product "${tripodFreeGift}" quantity "0" for cart "040006"
+	check product "${anotherFreeGift}" quantity "1" for cart "040006"
+	Should Be Equal As Numbers    ${cartAfterPromo1}    452.88
+
+Test_Order_Threshold_Free_Gift_Promos_Exclusive_Rule_Groups
+	[Documentation]     Order total over 500 USD 
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rules for ids "order_threshold_free_gift11 order_threshold_free_gift12" with module "promotions-module-junit"
+	
+	${tripodFreeGift}=    get product by code "1687508"
+	${anotherFreeGift}=    get product by code "2938457"
+	${slrCamera}=    get product by code "1934406"
+	create cart "040007"
+	
+	add "${slrCamera}" to cart "040007"
+	${cartAfterPromo1}=    evaluate promotion for cart "040007" by promotion engine
+	check product "${tripodFreeGift}" quantity "0" for cart "040007"
+	check product "${anotherFreeGift}" quantity "1" for cart "040007"
+	Should Be Equal As Numbers    ${cartAfterPromo1}    452.88
+	
+	add "${slrCamera}" to cart "040007"
+	${cartAfterPromo2}=    evaluate promotion for cart "040007" by promotion engine
+	check product "${tripodFreeGift}" quantity "1" for cart "040007"
+	check product "${anotherFreeGift}" quantity "0" for cart "040007"
+	Should Be Equal As Numbers    ${cartAfterPromo2}    905.76
+	
+	remove one item of product "${slrCamera}" for cart "040007"
+	${cartAfterPromo2}=    evaluate promotion for cart "040007" by promotion engine
+	check product "${slrCamera}" quantity "1" for cart "040007"
+	check product "${tripodFreeGift}" quantity "0" for cart "040007"
+	check product "${anotherFreeGift}" quantity "1" for cart "040007"
+	Should Be Equal As Numbers    ${cartAfterPromo1}    452.88
+
+Test_No_Halt
+	[Documentation]     Get rules evaluation not stopped w/o halt action in a rule
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rules for ids "order_threshold_fixed_discount_cart order_threshold_percentage_discount_cart" with module "promotions-module-junit"
+
+	create cart "080006"
+	${product}=    get product by code "493683"
+	add "${product}" to cart "080006"
+	add "${product}" to cart "080006"
+	${cartTotal1}=    get total of "080006"
+	Should Be Equal As Numbers    ${cartTotal1}    236.90
+	
+	# only threshold of order_threshold_fixed_discount_cart ($200) is reached and the only rule triggers 
+	evaluate promotion for cart "080006" by promotion engine
+	${cartTotal2}=    get total of "080006"
+	Should Be Equal As Numbers    ${cartTotal2}    216.90
+	
+	# threshold of order_threshold_percentage_discount_cart ($250) is reached and the rule triggers first as it has the highest priority of the 2 rules.
+	# then the order_threshold_percentage_discount_cart triggers as no halt in the 1st rule
+	add "${product}" to cart "080006"
+	evaluate promotion for cart "080006" by promotion engine
+	${cartTotal3}=    get total of "080006"
+	Should Be Equal As Numbers    ${cartTotal3}    299.81
+	
+
+Test_Halt
+	[Documentation]     Get following rules evaluation stop after halt action in a rule
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rules for ids "order_threshold_fixed_discount_cart order_threshold_percentage_discount_cart_then_halt" with module "promotions-module-junit"
+
+	create cart "080007"
+	${product}=    get product by code "493683"
+	add "${product}" to cart "080007"
+	add "${product}" to cart "080007"
+	${cartTotal1}=    get total of "080007"
+	Should Be Equal As Numbers    ${cartTotal1}    236.90
+	
+	# only threshold of order_threshold_fixed_discount_cart ($200) is reached and the only rule triggers 
+	evaluate promotion for cart "080007" by promotion engine
+	${cartTotal2}=    get total of "080007"
+	Should Be Equal As Numbers    ${cartTotal2}    216.90
+	
+	# threshold of order_threshold_percentage_discount_cart_then_halt ($250) is reached and the rule triggers first as it has the highest priority of the 2 rules
+	# following evaluations stopped as the rule calls drools.halt(). That's why the 2nd promotion doesn't trigger. 
+	add "${product}" to cart "080007"
+	evaluate promotion for cart "080007" by promotion engine
+	${cartTotal3}=    get total of "080007"
+	Should Be Equal As Numbers    ${cartTotal3}    319.81
+
+Test_Halt_First
+	[Documentation]     Get following rules evaluation stop after halt action in a rule (the HALT action is on the first place of 2 rule actions)
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rules for ids "order_threshold_fixed_discount_cart order_threshold_percentage_discount_cart_then_halt_first" with module "promotions-module-junit"
+
+	create cart "080007"
+	${product}=    get product by code "493683"
+	add "${product}" to cart "080007"
+	add "${product}" to cart "080007"
+	${cartTotal1}=    get total of "080007"
+	Should Be Equal As Numbers    ${cartTotal1}    236.90
+	
+	# only threshold of order_threshold_fixed_discount_cart ($200) is reached and the only rule triggers 
+	evaluate promotion for cart "080007" by promotion engine
+	${cartTotal2}=    get total of "080007"
+	Should Be Equal As Numbers    ${cartTotal2}    216.90
+	
+	# threshold of order_threshold_percentage_discount_cart_then_halt ($250) is reached and the rule triggers first as it has the highest priority of the 2 rules
+	# following evaluations stopped as the rule calls drools.halt(). That's why the 2nd promotion doesn't trigger. 
+	add "${product}" to cart "080007"
+	evaluate promotion for cart "080007" by promotion engine
+	${cartTotal3}=    get total of "080007"
+	Should Be Equal As Numbers    ${cartTotal3}    319.81
+	

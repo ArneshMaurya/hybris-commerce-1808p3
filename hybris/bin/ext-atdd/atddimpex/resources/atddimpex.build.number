@@ -1,0 +1,11 @@
+#Ant properties
+#Fri Jun 15 09:48:57 UTC 2018
+builddate=20180615 0948
+description=atddimpex
+group.id=de.hybris.platform
+module.name=platform-module
+name=atddimpex
+releasedate=20180329 0855
+vendor=hybris
+version=18.08
+version.api=18.08.0

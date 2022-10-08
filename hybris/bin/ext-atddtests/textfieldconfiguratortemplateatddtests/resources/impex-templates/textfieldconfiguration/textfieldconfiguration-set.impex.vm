@@ -1,0 +1,6 @@
+#parse( "impex-templates/textfield-common-macros.impex.vm" )
+#[[
+
+INSERT_UPDATE TextFieldConfiguratorSetting;id[unique=true];$catalogversion;textFieldLabel[lang=$lang];textFieldDefaultValue[lang=$lang]
+]]#
+;${textfieldConfiguratorId};;${label};${defaultValue}

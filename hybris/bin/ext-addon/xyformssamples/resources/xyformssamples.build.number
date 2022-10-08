@@ -1,0 +1,11 @@
+#Ant properties
+#Thu Jun 28 06:48:23 UTC 2018
+builddate=20180628 0648
+description=xyformssamples
+group.id=de.hybris.platform
+module.name=platform-module
+name=xyformssamples
+releasedate=20180326 1024
+vendor=hybris
+version=18.08
+version.api=18.08.0

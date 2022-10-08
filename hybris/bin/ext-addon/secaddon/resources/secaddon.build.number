@@ -1,0 +1,11 @@
+#Ant properties
+#Fri Jul 06 08:45:38 UTC 2018
+builddate=20180706 0845
+description=secaddon
+group.id=de.hybris.platform
+module.name=platform-module
+name=secaddon
+releasedate=20180221 1942
+vendor=hybris
+version=6.7.0.0
+version.api=6.7.0

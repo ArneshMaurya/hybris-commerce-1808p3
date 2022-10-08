@@ -1,0 +1,6 @@
+
+#parse( "impex-templates/common-macros.impex.vm" )
+#[[
+UPDATE Product;code[unique=true];name[lang=$lang];$supercategories;$catalogversion;subscriptionTerm(id)
+]]#
+;${productCode};${productCode};testCategory0;;${termId}

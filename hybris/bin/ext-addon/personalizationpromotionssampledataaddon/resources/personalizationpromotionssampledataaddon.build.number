@@ -1,0 +1,11 @@
+#Ant properties
+#Fri Jun 29 06:20:47 UTC 2018
+builddate=20180629 0620
+description=personalizationpromotionssampledataaddon
+group.id=de.hybris.platform
+module.name=platform-module
+name=personalizationpromotionssampledataaddon
+releasedate=20180626 1840
+vendor=hybris
+version=18.08
+version.api=18.08.0

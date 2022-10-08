@@ -1,0 +1,11 @@
+#Ant properties
+#Mon Jul 09 09:50:30 UTC 2018
+builddate=20180709 0950
+description=apiregistrybackoffice
+group.id=de.hybris.platform
+module.name=platform-module
+name=apiregistrybackoffice
+releasedate=20180704 1255
+vendor=hybris
+version=18.08
+version.api=18.08.0

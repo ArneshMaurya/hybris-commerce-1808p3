@@ -1,0 +1,7 @@
+#parse( "impex-templates/textfield-common-macros.impex.vm" )
+#[[
+$supercategories=supercategories(code, $catalogversionResolver)
+
+INSERT_UPDATE StockLevel;available;warehouse(code)[unique=true];inStockStatus(code);overSelling;preOrder;productCode[unique=true];reserved
+]]#
+;${quantity};${warehouse};notSpecified;0;0;${productCode};0

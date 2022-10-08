@@ -1,0 +1,30 @@
+@charset "UTF-8";
+.yw-compareview-collection-header-container .yw-expandCollapse {
+  right: 15px;
+  top: 7px;
+  background-size: 0; }
+  .yw-compareview-collection-header-container .yw-expandCollapse:before {
+    font-family: "FontAwesome", sans-serif;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
+    font-size: 14px;
+    content: "";
+    color: #1e2830;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%) translateX(-50%); }
+  .yw-compareview-collection-header-container .yw-expandCollapse:hover:before {
+    color: #0486e0; }
+.yw-compareview-collection-header-container.yw-collection-collapsed .yw-expandCollapse:before {
+  content: ""; }
+.yw-compareview-collection-header-container.yw-collection-collapsed + .yw-compareview-collection-values-container {
+  display: none; }
+.yw-compareview-collection-header-container .z-label {
+  font-weight: bold; }
+.yw-compareview-collection-values-container {
+  border-top: 1px solid #e0e9f0;
+  margin-top: 5px;
+  padding-top: 5px; }
+.yw-compareview-attribute-value-entry {
+  margin-bottom: 5px; }

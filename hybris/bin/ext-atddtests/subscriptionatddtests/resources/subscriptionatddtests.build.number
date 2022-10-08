@@ -1,0 +1,11 @@
+#Ant properties
+#Thu Jun 28 04:59:49 UTC 2018
+builddate=20180628 0459
+description=subscriptionatddtests
+group.id=de.hybris.platform
+module.name=platform-module
+name=subscriptionatddtests
+releasedate=20180329 0855
+vendor=hybris
+version=18.08
+version.api=18.08.0

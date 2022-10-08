@@ -1,0 +1,11 @@
+#Ant properties
+#Thu Jun 07 14:55:39 UTC 2018
+builddate=20180607 1455
+description=cisavs
+group.id=de.hybris.platform
+module.name=platform-module
+name=cisavs
+releasedate=20170120 1243
+vendor=hybris
+version=6.3.0.0-SNAPSHOT
+version.api=6.3.0

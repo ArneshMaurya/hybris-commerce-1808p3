@@ -1,0 +1,123 @@
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+##################
+# Custom Ignores #
+##################
+
+
+########################
+# Java generated files #
+########################
+*.class
+*.ear
+*.jar
+*.war
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+##########
+# Hybris #
+##########
+hybris/bin/*
+!hybris/bin/custom/
+gensrc/
+jalo/
+build.xml
+velocity.log
+hmc.xsd
+beans.xsd
+items.xsd
+extensioninfo.xsd
+platformhome.properties
+*-testclasses.xml
+*webtestclasses.xml
+ruleset.xml
+classes/
+testreport/
+build-tools/
+c4c-integration/
+hybris-ems/
+hybris-Mobile-Apps-SDK/
+hybris-sbg/
+installer/
+licenses/
+hybris/bin/ext-accelerator/
+hybris/bin/ext-addon/
+hybris/bin/ext-atdd/
+hybris/bin/ext-atddtests/
+hybris/bin/ext-backoffice/
+hybris/bin/ext-channel/
+hybris/bin/ext-cockpit/
+hybris/bin/ext-commerce/
+hybris/bin/ext-content/
+hybris/bin/ext-customer-experience/
+hybris/bin/ext-data/
+hybris/bin/ext-eventtracking/
+hybris/bin/ext-integration/
+hybris/bin/ext-platform-backoffice/
+hybris/bin/ext-platform-optional/
+hybris/bin/ext-smartedit/
+hybris/bin/ext-supportability/
+hybris/bin/ext-template/
+hybris/bin/ext-webservices/
+###############
+# Hybris Data #
+###############
+data
+log
+lib
+roles
+temp
+
+#########################
+# Maven generated files #
+#########################
+target/
+
+######################
+# OS generated files #
+######################
+.DS_Store
+ehthumbs.db
+Icon?
+Thumbs.db
+
+#################
+# Editors Files #
+#################
+.classpath
+.vscode
+*.sublime-project
+*.sublime-workspace
+.project
+.settings
+eclipsebin
+.idea
+idea-module-files/
+.externalToolBuilders
+.springBeans
+.pmd
+
+##############
+# Diff Files #
+##############
+*.orig
+
+######################
+# Editing temp files #
+######################
+*~
+*#
+
+###########################
+# Other unnecessary files #
+###########################
+.svn
+.env
+build
+.sonar
+
+##############
+# Exceptions #
+##############
+# !xxx.jar

@@ -1,0 +1,5 @@
+#parse( "impex-templates/common-macros.impex.vm" )
+#[[
+INSERT_UPDATE StockLevel;productCode[unique=true];available;inStockStatus(code)[default=notSpecified];warehouse(code)[default=warehouse]
+]]#
+;${productCode};${stock};;${warehouse}

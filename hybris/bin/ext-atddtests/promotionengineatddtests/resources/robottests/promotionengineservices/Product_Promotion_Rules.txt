@@ -1,0 +1,1334 @@
+*** Settings ***
+Resource          promotionengine/PromotionEngineServices_Keywords.txt
+Resource          ruleengine/Util_Keywords.txt
+
+*** Test Cases ***
+Test_Order_Threshold_Perfect_Partner_Included
+	[Documentation]		Test order threshold perfect partner promotion
+	...					(discounted price is included when calculating total threshold)
+	...					Threshold = $250, fixed price $100
+
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "order_threshold_perfect_partner_included" with module "promotions-module-junit"
+
+	# Setting variables
+	${cartId}=    Set Variable    000002
+	# Original price 147.04 USD
+	${partnerProduct}=    get product by code "325414"
+	# Original price 118.45 USD
+	${product}=     get product by code "493683"
+
+	# Test
+	create cart "${cartId}"
+	add "${partnerProduct}" to cart "${cartId}"
+	add "${product}" to cart "${cartId}"
+	${cartBeforePromo}=	get total of "${cartId}"
+	Should Be Equal As Numbers  265.49  ${cartBeforePromo}
+
+	# Test: Promotion shouldn't fire
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  265.49  ${cartAfterPromo}
+
+	# Test: Promotion should fire
+	add "${product}" to cart "${cartId}"
+	${cartAfterPromo2}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  336.9  ${cartAfterPromo2}
+
+	# Test: Promotion should fire for 1 partner product
+	add "${partnerProduct}" to cart "${cartId}"
+	${cartAfterPromo3}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  483.94  ${cartAfterPromo3}
+
+	# Test: 2 partner products in cart, no other products. Promotion shouldn't fire
+	remove product "${product}" for cart "${cartId}"
+	${cartAfterPromo4}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  294.08  ${cartAfterPromo4}
+
+	# Test: 3 partner products in cart, no other products. Promotion should fire for 1 unit
+	add "${partnerProduct}" to cart "${cartId}"
+	${cartAfterPromo5}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  394.08  ${cartAfterPromo5}
+
+
+Test_Order_Threshold_Perfect_Partner_Not_Included
+	[Documentation]		Test order threshold perfect partner promotion
+	...					(discounted price is not included when calculating total threshold)
+	...					Threshold = $250, fixed price $100
+
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "order_threshold_perfect_partner_not_included" with module "promotions-module-junit"
+
+	# Setting variables
+	${cartId}=    Set Variable    000002
+	# Original price 147.04 USD
+	${partnerProduct}=    get product by code "325414"
+	# Original price 118.45 USD
+	${product}=     get product by code "493683"
+
+	# Test
+	create cart "${cartId}"
+	add "${partnerProduct}" to cart "${cartId}"
+	add "${product}" to cart "${cartId}"
+	${cartBeforePromo}=	get total of "${cartId}"
+	# $118.45 + $147.04 = $265.49
+	Should Be Equal As Numbers  265.49  ${cartBeforePromo}
+
+	# Test: Promotion should not fire yet as $118.45 (price of non-partner products in the cart) < $250 (threshold)
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	# $118.45 + $147.04 = $265.49
+	Should Be Equal As Numbers  265.49  ${cartAfterPromo}
+
+	add "${product}" to cart "${cartId}"
+	# Test: Promotion should not fire yet as $118.45 + $118.45 (price of non-partner products in the cart) < $250 (threshold)
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	# $118.45 + $118.45 + $147.04 = $383.94
+	Should Be Equal As Numbers  383.94  ${cartAfterPromo}
+
+	add "${product}" to cart "${cartId}"
+	# Test: Promotion should fire as $118.45 + $118.45 + $118.45 (price of non-partner products in the cart) > $250 (threshold)
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	# $118.45 + $118.45 + $118.45 + $100 = $455.35 
+	Should Be Equal As Numbers  455.35  ${cartAfterPromo}
+
+
+Test_Order_Threshold_Perfect_Partner_And_Product_Fixed_Discount
+	[Documentation]		Test order threshold perfect partner promotion
+	...					(discounted price is included when calculating total threshold)
+	...					threshold = $250, fixed price $100
+	...					and the same product fixed discount $10 promotion with low priority
+
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rules for ids "order_threshold_perfect_partner_included product_fixed_discount_325414" with module "promotions-module-junit"
+
+	# Setting variables
+	${cartId}=    Set Variable    000003
+	# Original price 147.04 USD
+	${partnerProduct}=    get product by code "325414"
+	# Original price 118.45 USD
+	${product}=     get product by code "493683"
+
+	create cart "${cartId}"
+
+	# Test: partner product in cart, fixed_discount promotion should fire
+	add "${partnerProduct}" to cart "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  137.04  ${cartAfterPromo}
+
+	# Test: partner product with quantity 2 in cart, fixed_discount promotion should fire
+	add "${partnerProduct}" to cart "${cartId}"
+	${cartAfterPromo2}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  274.08  ${cartAfterPromo2}
+
+	# Test: partner product with quantity 2 and another product in cart, both promotions should fire
+	add "${product}" to cart "${cartId}"
+	${cartAfterPromo3}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers  355.49  ${cartAfterPromo3}
+
+
+Test_Apply_Fixed_Price_For_Category_Promotion_TestCase_1
+	[Documentation]     Apply special target price on selected product(s) or categories where cart contains products from different brand category(categoryCode: brand_10 and brand_5) but same category(category code : 576)
+	...                 Buy any Canon digital compact camera (combination of categoryCode: 576 AND categoryCode: brand_10) for $60
+	
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "product_fixed_price" with module "promotions-module-junit"
+	
+	# Setting variables 
+	${cartId}=    Set Variable    "030001"
+	${sonyCompact}=    get product by code "23210"
+	${canonCompact1}=    get product by code "1934793"
+	${canonCompact2}=    get product by code "1934794"
+	
+	# Test
+    create cart "${cartId}"
+    add "${sonyCompact}" to cart "${cartId}"
+	add "${canonCompact1}" to cart "${cartId}"
+	add "${canonCompact2}" to cart "${cartId}"
+	
+	${cartBeforePromo}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartBeforePromo}    309.70
+
+	
+	
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}    230
+	
+	
+	remove product "${canonCompact1}" for cart "${cartId}"
+	remove product "${canonCompact2}" for cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartAfterPromotedProductsRemoved}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartAfterPromotedProductsRemoved}    110
+	
+	
+Test_Apply_Fixed_Price_For_Category_Promotion_TestCase_2
+	[Documentation]     Apply special target price on selected product(s) or categories where cart contains products from same brand category(categoryCode: brand_10) but different categories(category code : 576 and category code : 578)
+	...                 Buy any Canon digital compact camera (combination of categoryCode: 576 AND categoryCode: brand_10) for $60
+	
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "product_fixed_price" with module "promotions-module-junit"
+	
+	# Setting variables 
+	${cartId}=    Set Variable    "030002"
+	${canonCompact1_Id}=    Set Variable    1934793
+	${canonDslr1}=    get product by code "1382080"
+	${canonCompact1}=    get product by code "${canonCompact1_Id}"
+	
+	# Test
+    create cart "${cartId}"
+    add "${canonDslr1}" to cart "${cartId}"
+	add "${canonCompact1}" to cart "${cartId}"
+
+	${cartBeforePromo}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartBeforePromo}    674.73
+	
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}     634.88
+	
+	${productPriceAfterPromo}=    get product total for "${canonCompact1_Id}" from cart "${cartId}"
+	Should Be Equal As Numbers    ${productPriceAfterPromo}     60.00
+	
+	remove product "${canonCompact1}" for cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartAfterPromotedProductsRemoved}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartAfterPromotedProductsRemoved}    574.88
+
+Test_Apply_Percentage_Discount_For_Category_Promotion
+	[Documentation]     A percentage discount is applied on every item with qualifying category
+	...                 10% off on Canon digital compact camera (combination of categoryCode: 576 AND categoryCode: brand_10) but not another Canon or other brands
+	
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "product_category_percentage_discount_product" with module "promotions-module-junit"
+	
+	# Setting variables
+	${cartId}=    Set Variable    "040002"
+	${compactCanon1}=    get product by code "1934793"
+	${compactCanon2}=    get product by code "1934794"
+	${anotherCanon}=    get product by code "1382080"
+	${sonyCompact}=    get product by code "23210"
+	
+	# Test
+    create cart "${cartId}"
+	add "${compactCanon1}" to cart "${cartId}"
+	add "${compactCanon1}" to cart "${cartId}"
+	add "${compactCanon2}" to cart "${cartId}"
+	add "${anotherCanon}" to cart "${cartId}"
+	add "${sonyCompact}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartBeforePromo}    984.43
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}    954.47
+	remove product "${compactCanon1}" for cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartAfterPromotedProductsRemoved}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartAfterPromotedProductsRemoved}    774.74
+	
+Test_Apply_Percentage_Discount_For_Category_Promotion_JPY
+	[Documentation]     A percentage discount is applied on every item with qualifying category
+	...                 10% off on Canon digital compact camera (combination of categoryCode: 576 AND categoryCode: brand_10) but not another Canon or other brands
+	
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "product_category_percentage_discount_product" with module "promotions-module-junit"
+	
+	# Setting variables
+	${cartId}=    Set Variable    "040002"
+	${compactCanon1}=    get product by code "1934793"
+	${compactCanon2}=    get product by code "1934794"
+	${anotherCanon}=    get product by code "1382080"
+	${sonyCompact}=    get product by code "23210"
+	
+	# Test
+    create cart "${cartId}" for currency "JPY"
+	add "${compactCanon1}" to cart "${cartId}"
+	add "${compactCanon1}" to cart "${cartId}"
+	add "${compactCanon2}" to cart "${cartId}"
+	add "${anotherCanon}" to cart "${cartId}"
+	add "${sonyCompact}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartBeforePromo}    83834
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}    81284
+	remove product "${compactCanon1}" for cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartAfterPromotedProductsRemoved}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartAfterPromotedProductsRemoved}    65984
+
+# Test with excluded products
+Test_No_Promotion_Applied_Only_Excluded_Product
+	[Documentation]     Cart contain only excluded product.
+	...					No promotions should be applied.
+	
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "order_threshold_percentage_discount_excluded_product" with module "promotions-module-junit"
+	
+	# Setting variables
+	${cartId}=    Set Variable    "020050"
+	${product1}=    get product by code "1934793"
+	
+	# Test
+    create cart "${cartId}"
+	add "${product1}" to cart "${cartId}"
+	add "${product1}" to cart "${cartId}"
+	add "${product1}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartBeforePromo}    ${cartAfterPromo}
+	add "${product1}" to cart "${cartId}"
+	add "${product1}" to cart "${cartId}"
+	${cartBeforePromo2}=    get total of "${cartId}"
+	${cartAfterPromo2}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartBeforePromo2}    ${cartAfterPromo2}
+
+# Test without excluded products
+Test_Apply_Percentage_Threshold_Promotion_Without_Excluded_Products
+	[Documentation]     Apply threshold promotion only without excluded products.
+	...					Cart contains only not exluded products. 
+	
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "order_threshold_percentage_discount_excluded_product" with module "promotions-module-junit"
+	
+	# Setting variables
+	${cartId}=    Set Variable    "020099"
+	${product2}=    get product by code "1382080"
+	${product3}=    get product by code "1432722"
+	
+	# Test
+    create cart "${cartId}"
+	add "${product2}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartBeforePromo}    574.88
+	add "${product3}" to cart "${cartId}"
+	add "${product3}" to cart "${cartId}"
+	${cartBeforePromo2}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}    1231.77
+	
+# Test with excluded products
+Test_Apply_Percentage_Threshold_Promotion_With_Excluded_Products_Undo
+	[Documentation]     Apply threshold promotion with excluded products.
+	...					Cart mixed products and check total value after removing not excluded products. 
+	
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "order_threshold_percentage_discount_excluded_product" with module "promotions-module-junit"
+	
+	# Setting variables
+	${cartId}=    Set Variable    "020100"
+	${product1}=    get product by code "1934793"
+	${product2}=    get product by code "1382080"
+	${product3}=    get product by code "1432722"
+	
+	# Test
+    create cart "${cartId}"
+	add "${product2}" to cart "${cartId}"
+	${cartBeforePromo}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartBeforePromo}    574.88
+	add "${product3}" to cart "${cartId}"
+	add "${product3}" to cart "${cartId}"
+	${cartBeforePromo2}=    get total of "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}    1231.77
+	add "${product1}" to cart "${cartId}"
+	add "${product1}" to cart "${cartId}"
+	add "${product1}" to cart "${cartId}"
+	add "${product1}" to cart "${cartId}"
+	${cartBeforePromo3}=    get total of "${cartId}"
+	${cartAfterPromo3}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo3}    1631.17
+	remove product "${product2}" for cart "${cartId}"
+	remove product "${product3}" for cart "${cartId}"
+	remove product "${product3}" for cart "${cartId}"
+	${cartBeforePromo4}=    get total of "${cartId}"
+	${cartAfterPromo4}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo4}    ${cartBeforePromo4}
+	
+	
+Test_Order_Threshold_Perfect_Partner_Fixed_Price
+	[Documentation]     Buy a certain product from within a defined set for a fixed price when the threshold order value is exceeded.
+	...					The target price should apply to as many as possible partner products in the cart.
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "order_threshold_perfect_partner" with module "promotions-module-junit"
+	
+	# Setting variables
+	${cartId}=    Set Variable    "030003"
+	${partnerProduct1}=    get product by code "482105"
+	${partnerProduct2}=    get product by code "805693"
+	${partnerProduct3}=    get product by code "824267"
+	${partnerProduct4}=    get product by code "824259"
+	${notPartnerProduct}=    get product by code "784343"
+
+	# Test
+	create cart "${cartId}"
+	
+	# Test only 482105 in cart
+	add "${partnerProduct1}" to cart "${cartId}"
+	add "${partnerProduct1}" to cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartTotal1}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartTotal1}    299.38
+	add "${partnerProduct1}" to cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartTotal2}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartTotal2}    349.38
+	
+	# Test only 805693
+	remove product "${partnerProduct1}" for cart "${cartId}"
+	add "${partnerProduct2}" to cart "${cartId}"
+	add "${partnerProduct2}" to cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartTotal3}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartTotal3}    273.00
+	add "${partnerProduct2}" to cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartTotal4}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartTotal4}    323.00
+
+	# Test only 824267
+	remove product "${partnerProduct2}" for cart "${cartId}"
+	add "${partnerProduct3}" to cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartTotal5}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartTotal5}    283.85
+	add "${partnerProduct3}" to cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartTotal6}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartTotal6}    333.85
+    
+	# Test only 861175
+	remove product "${partnerProduct3}" for cart "${cartId}"
+	add "${partnerProduct4}" to cart "${cartId}"
+	add "${partnerProduct4}" to cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartTotal7}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartTotal7}    369.16
+	add "${partnerProduct4}" to cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartTotal8}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartTotal8}    419.16
+	
+	# Test not qualifying product in cart
+	remove product "${partnerProduct4}" for cart "${cartId}"
+	add "${notPartnerProduct}" to cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartTotal9}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartTotal9}    818.33
+
+	# Test not qualifying + qualifying with multiple quantities
+	add "${partnerProduct2}" to cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartTotal11}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartTotal11}    868.33
+
+	add "${partnerProduct1}" to cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartTotal12}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartTotal12}    1018.02
+	
+	add "${partnerProduct2}" to cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartTotal13}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartTotal13}    1154.52
+
+	# Test undo
+	remove product "${notPartnerProduct}" for cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartTotal14}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartTotal14}    336.19
+	remove product "${partnerProduct1}" for cart "${cartId}"
+	#total below threshold, remaining 2x805693 -> no discount
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartTotal15}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartTotal15}    273.00
+
+Test_Product_Price_Threshold_Fixed_Discount
+	[Documentation]     A fixed price discount is applied on products whose base price exceeds the specified threshold value.
+	...                 If product price is over $1000 give fixed discount on products $100 off
+	# Configuring rules and drools engine
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "product_price_threshold_fixed_discount" with module "promotions-module-junit"
+	
+	# Setting variables
+	${cartId}=    Set Variable    "090001"
+	# original price is 508.88$
+	${productCheaper1000}=    get product by code "2934302"
+	# original price is 1086$
+	${productOver1000}=    get product by code "816780"
+
+	# Test
+	create cart "${cartId}"
+	
+	# Test only "cheap" product in cart
+	add "${productCheaper1000}" to cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartTotal1}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartTotal1}    508.88
+
+	# Add another "cheap" product in cart so that in total > 1000$
+	add "${productCheaper1000}" to cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartTotal2}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartTotal2}    1017.76
+	
+	# Test adding "expensive" product in cart
+	add "${productOver1000}" to cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartTotal3}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartTotal3}    2003.76
+
+	# Test adding one more "expensive" product in cart
+	update entry "1" with quantity "2" for cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartTotal4}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartTotal4}    2989.76
+
+	# Remove 1 "expensive" product from cart
+	update entry "1" with quantity "1" for cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartTotal5}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartTotal5}    2003.76
+
+	# Remove all "expensive" products from cart
+	remove product "${productOver1000}" for cart "${cartId}"
+	evaluate promotion for cart "${cartId}" by promotion engine
+	${cartTotal6}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartTotal6}    1017.76
+
+Test_Order_Threshold_Fixed_Price_Products
+	[Documentation]     Spend over $400 to get an InfoLithium battery for $50
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "order_threshold_fixed_price_products" with module "promotions-module-junit"
+	
+	${cartId}=    Set Variable    "040005"
+	${lithiumBattery}=    get product by code "482105"
+	${lithiumBatteryProductId} =  Set Variable    482105
+	${slrCamera}=    get product by code "1934406"
+	create cart "${cartId}"
+	
+	add "${slrCamera}" to cart "${cartId}"
+	add "${lithiumBattery}" to cart "${cartId}"
+
+    ${cartBeforePromo}=    get total of "${cartId}"
+    Should Be Equal As Numbers    ${cartBeforePromo}    602.57
+
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   502.88 
+	
+	${lithiumBatteyPrice}=    get product total for "${lithiumBatteryProductId}" from cart "${cartId}"
+	Should Be Equal As Numbers    ${lithiumBatteyPrice}   50.00 
+	
+	#remove camera so order total is below $400 and check lithium battery is no more available at discounted price
+	remove product "${slrCamera}" for cart "${cartId}"
+	
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   149.69
+
+Test_Order_Threshold_Percentage_Discount_Products
+	[Documentation]     5% discount on all Camera accessories and supplies - Minimum order value $150
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "order_threshold_percentage_discount_products" with module "promotions-module-junit"
+	
+	${cartId}=    Set Variable    "040006"		
+	${Product1From585Category}=    get product by code "301233"
+	${Product2From585Category}=    get product by code "137220"
+	${Product3}=  	get product by code "325414"
+	create cart "${cartId}"
+	
+	add "${Product1From585Category}" to cart "${cartId}"
+	add "${Product2From585Category}" to cart "${cartId}"
+	add "${Product3}" to cart "${cartId}"
+	
+    ${cartBeforePromo}=    get total of "${cartId}"
+    Should Be Equal As Numbers    ${cartBeforePromo}    176.6
+    
+	# check 5% discount is applied on Product1From585Category and Product2From585Category and not on product3
+		
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   175.12 
+	
+	#remove product3 so order total is below $150 and check 5% discount is not applied on Product1From585Category and Product2From585Category
+	remove product "${Product3}" for cart "${cartId}"
+	
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   29.56	
+	
+	
+Test_Product_Bundle_Fixed_Price
+	[Documentation]     Buy the Cannon EOS 500D with any 2 memory cards and any Cannon camera flash for a bundle price of $1000
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "product_bundle_fixed_price" with module "promotions-module-junit"
+	
+	${cartId}=    Set Variable    "040007"			
+	${eos500}=    get product by code "4812254"
+	${flashMemory}=    get product by code "479956"
+	${canonCameraFlash}=  	get product by code "1099413"
+	create cart "${cartId}"
+	
+	add "${eos500}" to cart "${cartId}"
+	add "${flashMemory}" to cart "${cartId}"
+	add "${flashMemory}" to cart "${cartId}"	
+	add "${canonCameraFlash}" to cart "${cartId}"
+	
+    ${cartBeforePromo}=    get total of "${cartId}"
+    Should Be Equal As Numbers    ${cartBeforePromo}    1493.49
+    
+	# check bundle target price is changed to $1000 after promotion
+		
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   1000 
+	
+	#remove flashMemory and check promotion does not apply anymore
+	remove product "${flashMemory}" for cart "${cartId}"
+	
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   1288.75		
+
+Test_Product_Buy_X_Get_Y_Free
+	[Documentation]     Buy any 3 Color Films get 2 Black & White Films free
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "product_buy_x_get_y_free" with module "promotions-module-junit"
+	
+	${cartId}=    Set Variable    "040008"				
+	${colorFilm}=    get product by code "779848"
+	${b&wFilm}=    get product by code "779866"
+	create cart "${cartId}"
+	
+	add "${colorFilm}" to cart "${cartId}"
+	update entry "0" with quantity "3" for cart "${cartId}"
+
+	add "${b&wFilm}" to cart "${cartId}"	
+	add "${b&wFilm}" to cart "${cartId}"
+	
+    ${cartBeforePromo}=    get total of "${cartId}"
+    Should Be Equal As Numbers    ${cartBeforePromo}    40.5
+    
+	# check b&wfilms are free after promotion
+		
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   25.5
+	
+	# remove one colorfilm and check promotion is not applied anymore 
+	update entry "0" with quantity "2" for cart "${cartId}"
+	
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   32
+
+Test_Product_Buy_X_Get_Y_Free_Twice
+	[Documentation]     Buy any 6 Color Films get 4 Black & White Films free
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "product_buy_x_get_y_free" with module "promotions-module-junit"
+	
+	${cartId}=    Set Variable    "040008"				
+	${colorFilm}=    get product by code "779848"
+	${b&wFilm}=    get product by code "779866"
+	create cart "${cartId}"
+	
+	add "${colorFilm}" to cart "${cartId}"
+	update entry "0" with quantity "6" for cart "${cartId}"
+
+	add "${b&wFilm}" to cart "${cartId}"	
+	update entry "1" with quantity "4" for cart "${cartId}"
+	
+    ${cartBeforePromo}=    get total of "${cartId}"
+    Should Be Equal As Numbers    ${cartBeforePromo}   81
+    
+	# check b&wfilms are free after promotion		
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   51
+	
+	# remove one colorfilm and check only 2 b&w films are free
+	update entry "0" with quantity "5" for cart "${cartId}"
+	
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   57.5
+	
+Test_Product_Fixed_Discount
+	[Documentation]     $15 off on all Hand held Camcorders - excluding Camileo S10 EU and Camileo H20 EU
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "product_category_fixed_discount_excluded_products" with module "promotions-module-junit"
+	
+	${cartId}=    Set Variable    "040009"			
+	${gigashotToshiba}=    get product by code "1432722"
+	${camileoS10}=    get product by code "1776948"
+	${camileoH20}=    get product by code "1776947"
+	${sonyHandHeld}=    get product by code "1934406"
+
+	create cart "${cartId}"
+	
+	add "${gigashotToshiba}" to cart "${cartId}"
+	add "${camileoS10}" to cart "${cartId}"
+	add "${camileoH20}" to cart "${cartId}"
+	
+    ${cartBeforePromo}=    get total of "${cartId}"
+    Should Be Equal As Numbers    ${cartBeforePromo}    787.64
+    
+	# check $15 off is applied on gigashotToshiba	
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   772.64 
+	
+	add "${sonyHandHeld}" to cart "${cartId}"
+	
+	${cartBeforePromo}=    get total of "${cartId}"
+    Should Be Equal As Numbers    ${cartBeforePromo}  1225.52
+    
+	# check $15 off is applied on sonyHandHeld		
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   1210.52
+	
+	#remove products gigashotToshiba and sonyHandHeld from cart , no promotion will be applied.
+	remove product "${gigashotToshiba}" for cart "${cartId}"
+	remove product "${sonyHandHeld}" for cart "${cartId}"
+	
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}  390.76
+					
+Test_Product_Multibuy_Fixed_Price
+	[Documentation]     Buy any 3 film rolls for a combined price of $10
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "product_multibuy_fixed_price" with module "promotions-module-junit"
+
+	${cartId}=    Set Variable    "040010"					
+	${colorFilm}=    get product by code "779848"
+	${b&wFilm}=    get product by code "779866"
+	create cart "${cartId}"
+	
+	add "${colorFilm}" to cart "${cartId}"
+	add "${colorFilm}" to cart "${cartId}"
+	add "${b&wFilm}" to cart "${cartId}"
+	
+    ${cartBeforePromo}=    get total of "${cartId}"
+    Should Be Equal As Numbers    ${cartBeforePromo}    24.50
+    
+	# check 3 film rolls are available at 10$ after promotion		
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   10
+
+	# increase quantity of colour films in the cart to 4
+    update entry "0" with quantity "4" for cart "${cartId}"
+
+	# check 3 film rolls are available at 10$ after promotion and the rest - for normal price
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   27.0
+
+	# increase quantity of B&W films in the cart to 2
+    update entry "1" with quantity "2" for cart "${cartId}"
+
+    # check 6 film rolls are available at 20$ after promotion (promotion applied twice)
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   20.0
+
+    # reduce quantity of colour films in the cart to 2
+    update entry "0" with quantity "2" for cart "${cartId}"
+
+	#remove B&W film roll and promotion wont be applied anymore
+	remove product "${b&wFilm}" for cart "${cartId}"
+	
+	${cartBeforePromo}=    get total of "${cartId}"
+    Should Be Equal As Numbers    ${cartBeforePromo}    17
+    
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   17
+
+Test_Product_Perfect_Partner_Fixed_Price
+	[Documentation]     Buy the camera DSLR-A100H and get InfoLITHIUM Battery NP-FM55H for $75
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "product_perfect_partner_fixed_price" with module "promotions-module-junit"
+	
+	${cartId}=    Set Variable    "040010"					
+	${lithiumBattery}=    get product by code "482105"
+	${camera_DSLR-A100H}=    get product by code "816780"
+	create cart "${cartId}"
+	
+	add "${camera_DSLR-A100H}" to cart "${cartId}"
+	add "${lithiumBattery}" to cart "${cartId}"
+
+    ${cartBeforePromo}=    get total of "${cartId}"
+    Should Be Equal As Numbers    ${cartBeforePromo}    1235.69
+    
+		
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   1161
+	
+	#remove camera , now lithium battery is no more available at discount rate
+	remove product "${camera_DSLR-A100H}" for cart "${cartId}"
+	
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   149.69
+
+Test_Product_Perfect_Partner_Percentage_Discount
+	[Documentation]     Buy any Samsung PL60 camera and get a memory card for 25% less
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "product_perfect_partner_percentage_discount" with module "promotions-module-junit"
+	
+	${cartId}=    Set Variable    "040012"						
+	${memoryCard}=    get product by code "1641905"
+	${samsungCamera}=    get product by code "1981413"
+	create cart "${cartId}"
+	
+	add "${samsungCamera}" to cart "${cartId}"
+	add "${memoryCard}" to cart "${cartId}"
+
+    ${cartBeforePromo}=    get total of "${cartId}"
+    Should Be Equal As Numbers    ${cartBeforePromo}    327.39
+    
+		
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   291.71
+	
+	#remove camera , now memory card is no more available at discount rate
+	remove product "${samsungCamera}" for cart "${cartId}"
+	
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   142.7
+	
+Test_2_Product_Perfect_Partner_Percentage_Discounts
+	[Documentation]     Buy 2 any Samsung PL60 cameras and get 2 memory cards for 25% less for every one
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "product_perfect_partner_percentage_discount" with module "promotions-module-junit"
+	
+	${cartId}=    Set Variable    "040012"						
+	${memoryCard1}=    get product by code "2938458"
+	${memoryCard2}=    get product by code "479956"
+	${samsungCamera}=    get product by code "1981412"
+	create cart "${cartId}"
+	
+	add "${samsungCamera}" to cart "${cartId}"
+	add "${samsungCamera}" to cart "${cartId}"
+	add "${memoryCard1}" to cart "${cartId}"
+	add "${memoryCard2}" to cart "${cartId}"
+
+    ${cartBeforePromo}=    get total of "${cartId}"
+    Should Be Equal As Numbers    ${cartBeforePromo}    445.93
+    
+		
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   416.71
+	
+	#remove1  camera , now the more expensive memory card is no more available at discount rate
+	remove one item of product "${samsungCamera}" for cart "${cartId}"
+	
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   277.77
+
+Test_Product_Buy_CF_or_CT_Get_BWF_Free_Stackable
+	[Documentation]     Buy 1 Color Films get 1 Black & White Film for free & Buy camcodertape get 1 Black & White Film for free
+    	import electronicsstore sampledata
+    	import sourcerule data
+    	compile source rules for ids "product_buy_CF_get_BWF_free product_buy_CT_get_BWF_free" with module "promotions-module-junit"
+
+    	${cartId}=    Set Variable    "040013"
+    	${colorFilm}=    get product by code "779868"
+    	${b&wFilm}=    get product by code "1291399"
+    	${camtape}=    get product by code "137220"
+
+    	create cart "${cartId}"
+
+    	add "${colorFilm}" to cart "${cartId}"
+    	add "${b&wFilm}" to cart "${cartId}"
+
+        ${cartBeforePromo}=    get total of "${cartId}"
+        Should Be Equal As Numbers    ${cartBeforePromo}  20.00
+        
+    	# check b&wfilm is free after promotion
+        
+    	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+    	Should Be Equal As Numbers    ${cartAfterPromo}   7.50
+        
+        # add another b&wfilm to a cart
+    	update entry "1" with quantity "2" for cart "${cartId}"
+        
+    	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+        Should Be Equal As Numbers    ${cartAfterPromo}   20.0
+        
+        # add camcoder tape to a cart
+        add "${camtape}" to cart "${cartId}"
+        
+		${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+        Should Be Equal As Numbers    ${cartAfterPromo}   15.50
+
+		# leave only one B&W film in the cart
+        update entry "1" with quantity "1" for cart "${cartId}"
+
+        ${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+        Should Be Equal As Numbers    ${cartAfterPromo}   15.50
+
+        # add 3 B&W films in the cart
+        update entry "1" with quantity "3" for cart "${cartId}"
+
+		${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+		Should Be Equal As Numbers    ${cartAfterPromo}   28.00
+
+Test_Product_Buy_CF_or_CT_Get_BWF_50_percent_Stackable
+	[Documentation]     Buy 1 Color Films get 1 Black & White Film for 50% & Buy camcodertape get 1 Black & White Film for 50%
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rules for ids "product_buy_CF_get_BWF_50_percent product_buy_CT_get_BWF_50_percent" with module "promotions-module-junit"
+
+	${cartId}=    Set Variable    "040013"
+	${colorFilm}=    get product by code "779868"
+	${b&wFilm}=    get product by code "1291399"
+	${camtape}=    get product by code "137220"
+
+	create cart "${cartId}"
+
+	add "${colorFilm}" to cart "${cartId}"
+	add "${b&wFilm}" to cart "${cartId}"
+
+	${cartBeforePromo}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartBeforePromo}  20.00
+
+	# check b&wfilm is 50% discounted after promotion
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   13.75
+
+	# add another b&wfilm to a cart
+	update entry "1" with quantity "2" for cart "${cartId}"
+
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   26.25
+
+	# add camcoder tape to a cart
+	add "${camtape}" to cart "${cartId}"
+
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   28.00
+
+	# leave only one B&W film in the cart
+	update entry "1" with quantity "1" for cart "${cartId}"
+
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   21.75
+
+	# add 3 B&W films in the cart
+	update entry "1" with quantity "3" for cart "${cartId}"
+
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   40.50
+
+Test_Product_Buy_CF_Get_BWF_50_percent
+    [Documentation]	Buy 1 Color Films get 1 Black & White Film for 50%
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "product_buy_CF_get_BWF_50_percent" with module "promotions-module-junit"
+
+	${cartId}=    Set Variable    "040013"
+	${colorFilm}=    get product by code "779868"
+	${b&wFilm}=    get product by code "1291399"
+
+	create cart "${cartId}"
+
+	add "${colorFilm}" to cart "${cartId}"
+	add "${b&wFilm}" to cart "${cartId}"
+
+	${cartBeforePromo}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartBeforePromo}  20.00
+
+	# check b&wfilm is 50% discounted after promotion
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   13.75
+
+	# add another b&wfilm to a cart
+	update entry "1" with quantity "2" for cart "${cartId}"
+
+    ${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+    Should Be Equal As Numbers    ${cartAfterPromo}   26.25
+
+    # add another b&wfilm to a cart
+    update entry "0" with quantity "2" for cart "${cartId}"
+
+    ${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+    Should Be Equal As Numbers    ${cartAfterPromo}   27.50
+
+    # add another b&wfilm to a cart
+    update entry "1" with quantity "5" for cart "${cartId}"
+
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   65.0
+
+    # add another b&wfilm to a cart
+    update entry "0" with quantity "5" for cart "${cartId}"
+
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   68.75
+
+Test_Product_Buy_X_CF_Get_Y_BWF_Plus_BWF_50_percent
+	[Documentation]     Buy 3 Color Films get 1 Black & White Film for free. Add one more Black & White Film and get it for 50%
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rules for ids "product_buy_3_CF_get_BWF_free product_50_percent_discount" with module "promotions-module-junit"
+
+	${cartId}=    Set Variable    "040013"
+    ${colorFilm}=   get product by code "779868"
+    ${b&wFilm}=		get product by code "1291399"
+    # extra color film, price = USD 8.5
+    ${extraColorFilm}=		get product by code "779848"
+
+	create cart "${cartId}"
+
+	add "${colorFilm}" to cart "${cartId}"
+	add "${b&wFilm}" to cart "${cartId}"
+
+	${cartBeforePromo}=    get total of "${cartId}"
+	Should Be Equal As Numbers    ${cartBeforePromo}  20.00
+
+	# check cart is 50% discounted after promotion
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   10.00
+
+	# increase quantity of colorFilm items to 3
+	update entry "0" with quantity "3" for cart "${cartId}"
+
+    # colorFilm should not be discounted, but the B&W film goes for free
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   22.5
+
+	# now increase quantity of B&W films to 2
+    update entry "1" with quantity "2" for cart "${cartId}"
+
+    # colorFilm should not be discounted, but the extra B&W film item is discounted by 50%
+    ${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+    Should Be Equal As Numbers    ${cartAfterPromo}   28.75
+
+    # now increase quantity of colorFilm items to 4
+    update entry "0" with quantity "4" for cart "${cartId}"
+
+    # extra colorFilm item should be discounted by 50% as well
+    ${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+    Should Be Equal As Numbers    ${cartAfterPromo}   32.5
+
+    # add extra color
+    add "${extraColorFilm}" to cart "${cartId}"
+
+    # extraColorFilm item should be discounted by 50%
+    ${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+    Should Be Equal As Numbers    ${cartAfterPromo}   36.75
+
+Test_Product_Buy_X_MC_Get_Y_MC_Free
+    	[Documentation]     Buy any 5 Memory Cards get 2 Memory Cards for free (BIT-4365 issue)
+    	import electronicsstore sampledata
+    	import sourcerule data
+    	compile source rules for ids "product_buy_x_902_get_y_902_free product_902_percentage_discount" with module "promotions-module-junit"
+
+    	${cartId}=    Set Variable    "040099"
+    	# Original price $10.00
+    	${memoryCard}=    get product by code "1366053"
+		# Original price $10.00
+    	${secureDigitalCard}=    get product by code "872912"
+    	# Original price $9.99
+    	${cfCard}=	get product by code "1322041"
+    	create cart "${cartId}"
+
+    	add "${memoryCard}" to cart "${cartId}"
+    	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+    	Should Be Equal As Numbers    ${cartAfterPromo}    9.0
+
+		# Increase quantity for product {memoryCard} from 1 to 5
+    	update entry "0" with quantity "5" for cart "${cartId}"
+        ${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+        Should Be Equal As Numbers    ${cartAfterPromo}    45.0
+
+        # Increase quantity for product {memoryCard} from 5 to 7 - percentage discount should disappear, but 2 items for free promo is applied
+		update entry "0" with quantity "7" for cart "${cartId}"
+		${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+		Should Be Equal As Numbers    ${cartAfterPromo}    50.0
+
+		# Increase quantity for product {memoryCard} from 7 to 13
+		update entry "0" with quantity "13" for cart "${cartId}"
+		${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+		Should Be Equal As Numbers    ${cartAfterPromo}    104.0
+
+		# Increase quantity for product {memoryCard} from 7 to 14 - 2 times the buy_x_get_y_free should be applied
+		update entry "0" with quantity "14" for cart "${cartId}"
+		${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+		Should Be Equal As Numbers    ${cartAfterPromo}    100.0
+
+	    # Reduce quantity for product {memoryCard} from 14 to 1, add 6 items of {secureDigitalCard}
+		update entry "0" with quantity "1" for cart "${cartId}"
+		add "${secureDigitalCard}" to cart "${cartId}"
+		update entry "1" with quantity "6" for cart "${cartId}"
+		${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+		Should Be Equal As Numbers    ${cartAfterPromo}    50.0
+
+		# Reduce quantity for product {memoryCard} from 14 to 1, add 6 items of {secureDigitalCard}
+		update entry "1" with quantity "4" for cart "${cartId}"
+		add "${cfCard}" to cart "${cartId}"
+		update entry "2" with quantity "2" for cart "${cartId}"
+		${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+		Should Be Equal As Numbers    ${cartAfterPromo}    50.0
+
+Test_Product_Variants_Percentage_Discount
+    	[Documentation]     Buy any variant of a base product with discount 10%
+    	import electronicsstore sampledata
+    	import sourcerule data
+    	compile source rules for ids "base_product_percentage_discount" with module "promotions-module-junit"
+
+    	${cartId}=    Set Variable    "040100"
+    	${variant1}=    get product by code "1978440_red"
+    	${variant2}=    get product by code "1978440_green"
+    	create cart "${cartId}"
+
+    	add "${variant1}" to cart "${cartId}"
+    	${cartBeforePromo}=    get total of "${cartId}"
+    	Should Be Equal As Numbers    ${cartBeforePromo}    558.40
+    	
+    	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+    	Should Be Equal As Numbers    ${cartAfterPromo}    502.56
+
+		# add another variant
+    	add "${variant2}" to cart "${cartId}"
+        ${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+        Should Be Equal As Numbers    ${cartAfterPromo}    1005.12
+        
+Test_Product_Explicit_Variant_Percentage_Discount
+    	[Documentation]     Buy one variant (explicitly defined in rule) with dicount 10% and another one not promoted 
+    	import electronicsstore sampledata
+    	import sourcerule data
+    	compile source rules for ids "variant_product_percentage_discount" with module "promotions-module-junit"
+
+    	${cartId}=    Set Variable    "040100"
+    	${variant1}=    get product by code "1978440_red"
+    	${variant2}=    get product by code "1978440_green"
+    	create cart "${cartId}"
+
+    	add "${variant1}" to cart "${cartId}"
+    	${cartBeforePromo}=    get total of "${cartId}"
+    	Should Be Equal As Numbers    ${cartBeforePromo}    558.40
+    	
+    	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+    	Should Be Equal As Numbers    ${cartAfterPromo}    502.56
+
+		# add another variant
+    	add "${variant2}" to cart "${cartId}"
+        ${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+        Should Be Equal As Numbers    ${cartAfterPromo}    1060.96
+        
+Test_Cart_Dicount_Without_Variants
+    	[Documentation]     Get 10% off on cart if there is no variant of a base product 
+    	import electronicsstore sampledata
+    	import sourcerule data
+    	compile source rules for ids "cart_dicount_no_base_product" with module "promotions-module-junit"
+
+    	${cartId}=    Set Variable    "040101"
+		${samsungCamera}=    get product by code "1981412"
+    	${variant1}=    get product by code "1978440_red"
+    	create cart "${cartId}"
+
+    	add "${samsungCamera}" to cart "${cartId}"
+    	${cartBeforePromo}=    get total of "${cartId}"
+    	Should Be Equal As Numbers    ${cartBeforePromo}    164.53
+    	
+    	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+    	Should Be Equal As Numbers    ${cartAfterPromo}    148.08
+
+		# add a variant and lose the cart discount
+    	add "${variant1}" to cart "${cartId}"
+        ${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+        # $164.53 + $558.40 = $722,93
+        Should Be Equal As Numbers    ${cartAfterPromo}    722.93
+        
+Test_Cart_Dicount_Without_Particular_Variant
+    	[Documentation]     Get 10% off on cart if there is no a particular variant of a base product 
+    	import electronicsstore sampledata
+    	import sourcerule data
+    	compile source rules for ids "cart_dicount_no_variant_product" with module "promotions-module-junit"
+
+    	${cartId}=    Set Variable    "040102"
+		${samsungCamera}=    get product by code "1981412"
+    	${variant1}=    get product by code "1978440_red"
+    	${variant2}=    get product by code "1978440_green"
+    	create cart "${cartId}"
+
+    	add "${samsungCamera}" to cart "${cartId}"
+    	add "${variant1}" to cart "${cartId}"
+    	${cartBeforePromo}=    get total of "${cartId}"
+    	Should Be Equal As Numbers    ${cartBeforePromo}    722.93
+    	
+    	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+    	Should Be Equal As Numbers    ${cartAfterPromo}    650.64
+
+		# add a particular variant and lose the cart discount
+    	add "${variant2}" to cart "${cartId}"
+        ${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+        # $722.93 + $558.40 = $1281.33
+        Should Be Equal As Numbers    ${cartAfterPromo}    1281.33
+        
+Test_Category_Dicount_Excluding_Particular_Variant
+    	[Documentation]     Get 10% off on a product of qualifying category (Digital Compact) excluding a particular variant product
+    	import electronicsstore sampledata
+    	import sourcerule data
+    	compile source rules for ids "category_dicount_no_variant_product" with module "promotions-module-junit"
+
+    	${cartId}=    Set Variable    "040103"
+		${samsungCamera}=    get product by code "1981412"
+    	${variant1}=    get product by code "1978440_green"
+    	${variant2}=    get product by code "1978440_red"
+    	create cart "${cartId}"
+
+    	add "${samsungCamera}" to cart "${cartId}"
+    	add "${variant1}" to cart "${cartId}"
+    	${cartBeforePromo}=    get total of "${cartId}"
+    	Should Be Equal As Numbers    ${cartBeforePromo}    722.93
+    	
+    	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+    	Should Be Equal As Numbers    ${cartAfterPromo}    650.64
+
+		# add a particular variant and w/o discount
+    	add "${variant2}" to cart "${cartId}"
+        ${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+        # $650.64 + $558.40 = $1209.04
+        Should Be Equal As Numbers    ${cartAfterPromo}    1209.04
+        
+Test_Category_Dicount_Excluding_Base_Product
+    	[Documentation]     Get 10% off on a product of qualifying category (Digital Compact) excluding base product
+    	import electronicsstore sampledata
+    	import sourcerule data
+    	compile source rules for ids "category_dicount_no_base_product" with module "promotions-module-junit"
+
+    	${cartId}=    Set Variable    "040103"
+		${samsungCamera}=    get product by code "1981412"
+    	${variant1}=    get product by code "1978440_green"
+    	${variant2}=    get product by code "1978440_red"
+    	create cart "${cartId}"
+
+    	add "${samsungCamera}" to cart "${cartId}"
+    	add "${variant1}" to cart "${cartId}"
+    	${cartBeforePromo}=    get total of "${cartId}"
+    	Should Be Equal As Numbers    ${cartBeforePromo}    722.93
+    	
+    	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+    	Should Be Equal As Numbers    ${cartAfterPromo}    706.48
+
+    	add "${variant2}" to cart "${cartId}"
+        ${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+        Should Be Equal As Numbers    ${cartAfterPromo}    1264.88
+
+ Test_Product_Multibuy_Fixed_Price_Twice
+	[Documentation]     Buy any 3 film rolls for a combined price of $10 - twice (6 film rolls for $20) 
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rule for id "product_multibuy_fixed_price" with module "promotions-module-junit"
+
+	${cartId}=    Set Variable    "040010"					
+	${film1}=    get product by code "779848"
+	${film2}=    get product by code "779842"
+	create cart "${cartId}"
+	
+	add "${film1}" to cart "${cartId}"
+	add "${film2}" to cart "${cartId}"
+	
+    ${cartBeforePromo}=    get total of "${cartId}"
+    Should Be Equal As Numbers    ${cartBeforePromo}    16
+    
+    update entry "0" with quantity "4" for cart "${cartId}"
+    update entry "1" with quantity "2" for cart "${cartId}"
+	# check the 6 film rolls are available for 20$ after promotion
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   20.0
+
+    update entry "0" with quantity "2" for cart "${cartId}"
+    update entry "1" with quantity "4" for cart "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   20.0
+
+	update entry "0" with quantity "1" for cart "${cartId}"
+    update entry "1" with quantity "5" for cart "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   20.0
+
+	update entry "0" with quantity "5" for cart "${cartId}"
+    update entry "1" with quantity "1" for cart "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   20.0
+
+	update entry "0" with quantity "3" for cart "${cartId}"
+    update entry "1" with quantity "3" for cart "${cartId}"
+	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}   20.0
+
+Test_All_Of_2_Products_Percentage_Discount
+    	[Documentation]     Give 10% off for 2 products if all them are in cart 
+    	import electronicsstore sampledata
+    	import sourcerule data
+    	compile source rules for ids "all_of_2_products_percentage_discount" with module "promotions-module-junit"
+
+    	${cartId}=    Set Variable    "040110"
+    	${product1}=    get product by code "872912"
+    	${product2}=    get product by code "1382080"
+    	${product3}=    get product by code "1934793"
+    	create cart "${cartId}"
+
+		# if only product1 is present in cart - no discount
+    	add "${product1}" to cart "${cartId}"
+    	${cartBeforePromo}=    get total of "${cartId}"
+    	Should Be Equal As Numbers    ${cartBeforePromo}    10
+    	
+    	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+    	Should Be Equal As Numbers    ${cartAfterPromo}    10
+
+		# if only product2 is present in cart - no discount
+		remove product "${product1}" for cart "${cartId}"
+
+    	add "${product2}" to cart "${cartId}"
+    	${cartBeforePromo}=    get total of "${cartId}"
+    	Should Be Equal As Numbers    ${cartBeforePromo}    574.88
+    	
+    	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+    	Should Be Equal As Numbers    ${cartAfterPromo}    574.88
+    	
+    	# add product1 again and get 10% for both of them
+    	add "${product1}" to cart "${cartId}"
+    	${cartBeforePromo}=    get total of "${cartId}"
+    	# $574.88 + $10 = $584.88 - w/o promotion 
+    	Should Be Equal As Numbers    ${cartBeforePromo}    584.88
+    	
+    	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+    	# $584.88 - $58.49 = $526.39 - with promotion has been applied 
+    	Should Be Equal As Numbers    ${cartAfterPromo}    526.39
+    	
+    	# add product3 and check no discount for it
+    	add "${product3}" to cart "${cartId}"
+    	${cartBeforePromo}=    get total of "${cartId}"
+    	# $526.39 + $99.85 = $626.24
+    	Should Be Equal As Numbers    ${cartBeforePromo}    626.24
+    	
+    	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+    	Should Be Equal As Numbers    ${cartAfterPromo}    626.24
+    	
+    	# add product1 again and get 10% for every item of the product
+    	add "${product1}" to cart "${cartId}"
+    	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+    	# $626.24 + $9 = $635.24
+    	Should Be Equal As Numbers    ${cartAfterPromo}    635.24
+    	
+    	# add product 2 again and get 10% for every item of the qualifying products
+    	add "${product2}" to cart "${cartId}"
+    	${cartAfterPromo}=    evaluate promotion for cart "${cartId}" by promotion engine
+    	# $635.24 + $526.39 = $1152.63
+    	Should Be Equal As Numbers    ${cartAfterPromo}    1152.63

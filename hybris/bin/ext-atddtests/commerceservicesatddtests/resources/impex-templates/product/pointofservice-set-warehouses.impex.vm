@@ -1,0 +1,6 @@
+#parse( "impex-templates/common-macros.impex.vm" )
+#[[
+
+INSERT_UPDATE PointOfService;name[unique=true];displayName;warehouses(code)
+]]#
+;${pointOfService};${pointOfService};${warehouse}

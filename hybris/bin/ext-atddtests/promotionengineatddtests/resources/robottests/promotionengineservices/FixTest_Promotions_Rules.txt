@@ -1,0 +1,22 @@
+*** Settings ***
+Resource          promotionengine/PromotionEngineServices_Keywords.txt
+Resource          ruleengine/Util_Keywords.txt
+
+*** Test Cases ***
+Test_Fix_For_Stackable_Entry_Percentage_Promotions
+	[Documentation]     A test for fix of BIT-4362
+	...                 Buy a product (2938457) of "Memory cards" category (902)
+	...                 Check that both of the promotions have been applied correctly 
+	...                 ('product_buy_2_MemCard_get_percentage_discount' 10% off first and 'coupon_code_percentage_discount_on_products_MemCards' 25% off after that according to it priorities)
+	import electronicsstore sampledata
+	import sourcerule data
+	compile source rules for ids "coupon_code_percentage_discount_on_products_MemCards product_buy_2_MemCard_get_percentage_discount" with module "promotions-module-junit"
+	
+	${product}=    get product by code "2938457"
+    create cart "020055"
+	add "${product}" to cart "020055"
+	${cartBeforePromo}=    get total of "020055"
+	LOG    ${cartBeforePromo}
+	Should Be Equal As Numbers    ${cartBeforePromo}    31.02
+	${cartAfterPromo}=    evaluate promotion for cart "020055" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo}    27.92

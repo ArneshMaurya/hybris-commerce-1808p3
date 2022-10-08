@@ -1,0 +1,36 @@
+# -----------------------------------------------------------------------
+# [y] hybris Platform
+#
+# Copyright (c) 2018 SAP SE or an SAP affiliate company. All rights reserved.
+#
+# This software is the confidential and proprietary information of SAP
+# ("Confidential Information"). You shall not disclose such Confidential
+# Information and shall use it only in accordance with the terms of the
+# license agreement you entered into with SAP.
+# -----------------------------------------------------------------------
+
+$defaultPassword=1234
+
+# Impexing previewmanagergroup as previewwebservices might not be impexed by the time this file is executed and the user impex uploads might fail
+INSERT_UPDATE UserGroup;UID[unique=true];groups(uid)[mode=append]
+;previewmanagergroup;employeegroup
+
+INSERT_UPDATE UserGroup;UID[unique=true];groups(uid)[mode=append]
+;apparel-de-cmsmanagergroup;employeegroup
+;apparel-uk-cmsmanagergroup;employeegroup
+;base-electronics-cmsmanagergroup;basecmsmanagergroup
+;electronics-cmsmanagergroup;base-electronics-cmsmanagergroup
+;powertools-cmsmanagergroup;employeegroup
+
+
+INSERT_UPDATE PrincipalGroupRelation;source(uid)[unique=true];target(uid)[unique=true]
+;apparel-de-cmsmanagergroup;basecmsmanagergroup;
+;apparel-uk-cmsmanagergroup;basecmsmanagergroup;
+;electronics-cmsmanagergroup;base-electronics-cmsmanagergroup;
+;powertools-cmsmanagergroup;basecmsmanagergroup;
+
+INSERT_UPDATE Employee;UID[unique=true];password[default=$defaultPassword];groups(uid)[mode=append];sessionLanguage(isocode)
+;cmsmanager-apparel-de;;apparel-de-cmsmanagergroup,previewmanagergroup;en
+;cmsmanager-apparel-uk;;apparel-uk-cmsmanagergroup,previewmanagergroup;en
+;cmsmanager-electronics;;electronics-cmsmanagergroup,previewmanagergroup;en
+;cmsmanager-powertools;;powertools-cmsmanagergroup,previewmanagergroup;en

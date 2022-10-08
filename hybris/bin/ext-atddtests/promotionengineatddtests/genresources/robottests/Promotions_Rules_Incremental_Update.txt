@@ -1,0 +1,64 @@
+*** Settings ***
+Resource          promotionengine/PromotionEngineServices_Keywords.txt
+Resource          ruleengine/Util_Keywords.txt
+
+*** Test Cases ***
+Test_Apply_Free_Gift_For_Complex_Bundle_USD
+	[Documentation]     Apply a free gift to the cart for a complex bundle
+	...                 Buy any digital compact camera (categoryCode: 576) OR any DSLR camera from the list (product codes: 2934302, 2934303, 1438465)
+	...                 AND buy any camera lense (categoryCode: 588)
+	import electronicsstore sampledata
+	import sourcerule data
+
+	compile source rule for id "order_threshold_change_delivery_mode" with module "promotions-module-junit"
+	${product1}=    get product by code "1934793"
+    create cart "020002"
+
+    add "${product1}" to cart "020002"
+    evaluate promotion for cart "020002" by promotion engine
+    delivery mode of cart "020002" should not be set
+    
+	compile source rule incrementally for id "product_bundle_free_gift" with module "promotions-module-junit"
+	
+	${dslrCamera1}=    get product by code "2934302"
+	${digitalCamera1}=    get product by code "325414"
+	${cameraLense1}=    get product by code "493683"
+	${freeGift}=    get product by code "1641905"
+    create cart "020005"
+	add "${dslrCamera1}" to cart "020005"
+	${cartBeforePromo1}=    get total of "020005"
+	LOG    ${cartBeforePromo1}
+	Should Be Equal As Numbers    ${cartBeforePromo1}    508.88
+	${cartAfterPromo1}=    evaluate promotion for cart "020005" by promotion engine
+	Should Be Equal As Numbers    ${cartAfterPromo1}    508.88
+	check product "${freeGift}" quantity "0" for cart "020005"
+	add "${cameraLense1}" to cart "020005"
+	${cartBeforePromo2}=    get total of "020005"
+	LOG    ${cartBeforePromo2}
+	Should Be Equal As Numbers    ${cartBeforePromo2}    627.33
+	${cartAfterPromo2}=    evaluate promotion for cart "020005" by promotion engine
+	LOG    ${cartAfterPromo2}
+	Should Be Equal As Numbers    ${cartAfterPromo2}    627.33
+	check product "${freeGift}" quantity "1" for cart "020005"
+	remove product "${dslrCamera1}" for cart "020005"
+	${cartAfterPromo3}=    evaluate promotion for cart "020005" by promotion engine
+	check product "${freeGift}" quantity "0" for cart "020005"
+	Should Be Equal As Numbers    ${cartAfterPromo3}    118.45
+	add "${digitalCamera1}" to cart "020005"
+	${cartBeforePromo4}=    get total of "020005"
+	LOG    ${cartBeforePromo4}
+	Should Be Equal As Numbers    ${cartBeforePromo4}    265.49
+	${cartAfterPromo5}=    evaluate promotion for cart "020005" by promotion engine
+	LOG    ${cartAfterPromo5}
+	Should Be Equal As Numbers    ${cartAfterPromo5}    265.49
+	check product "${freeGift}" quantity "1" for cart "020005"
+	add "${digitalCamera1}" to cart "020005"
+	add "${cameraLense1}" to cart "020005"
+	${cartBeforePromo6}=    get total of "020005"
+	LOG    ${cartBeforePromo6}
+	Should Be Equal As Numbers    ${cartBeforePromo6}    530.98
+	${cartAfterPromo6}=    evaluate promotion for cart "020005" by promotion engine
+	LOG    ${cartAfterPromo6}
+	Should Be Equal As Numbers    ${cartAfterPromo6}    530.98
+	check product "${freeGift}" quantity "1" for cart "020005"
+

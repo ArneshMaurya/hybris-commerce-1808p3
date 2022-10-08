@@ -1,0 +1,55 @@
+@import 'D:/hybris-commerce-1808p3/hybris/bin/ext-backoffice/backoffice/resources/backoffice/generated/cockpitng/cng/scss/cockpitng-globals.scss';
+@import 'D:/hybris-commerce-1808p3/hybris/bin/ext-backoffice/backoffice/resources/backoffice/generated/backoffice/scss/backoffice-variables.scss';
+
+@import "compareviewcollapsiblecollections-variables";
+
+.yw-compareview {
+	&-collection-header-container {
+  		.yw-expandCollapse {
+			right: $_compareview__collection-header-button--right;
+    		top: $_compareview__collection-header-button--top;
+			background-size: 0;
+
+			&:before {
+				font-family: $compareview__header-icon--font;
+				width: $_compareview__collection-header-button--size;
+				height: $_compareview__collection-header-button--size;
+				line-height: $_compareview__collection-header-button--size;
+				font-size: $font-size__base;
+				content: $_compareview__collection-collapse-button--content;
+				color: $compareview__cell-defaults--color;
+				position: absolute;
+				top: 50%;
+				transform: translateY(-50%) translateX(-50%);
+			}
+			
+			&:hover:before {
+				color: $_compareview__collection-button-hover--color;
+			}
+  		}
+
+  		&.yw-collection-collapsed {
+  			.yw-expandCollapse:before{
+				content: $_compareview__collection-expand-button--content;
+  			}
+
+  			+ .yw-compareview-collection-values-container {
+	  			display: none;
+	  		}
+		}
+
+		.z-label {
+			font-weight: $_compareview__collection-header-span--font-weight;
+		}
+  	}
+
+  	&-collection-values-container {
+		border-top: $_compareview__collection-values-container--border-top;
+		margin-top: $_compareview__collection-values-container--spacing;
+		padding-top: $_compareview__collection-values-container--spacing;
+  	}
+
+  	&-attribute-value-entry {
+  		margin-bottom: $_compareview__collection-value-entry--margin-bottom;
+  	}
+}

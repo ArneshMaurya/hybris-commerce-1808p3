@@ -1,0 +1,11 @@
+#Ant properties
+#Thu Jul 05 13:58:52 UTC 2018
+builddate=20180705 1358
+description=b2bpunchout
+group.id=de.hybris.platform
+module.name=platform-module
+name=b2bpunchout
+releasedate=20180704 1255
+vendor=hybris
+version=18.08
+version.api=18.08.0

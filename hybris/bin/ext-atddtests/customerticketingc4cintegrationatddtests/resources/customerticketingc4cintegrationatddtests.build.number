@@ -1,0 +1,11 @@
+#Ant properties
+#Mon Jun 18 04:27:35 UTC 2018
+builddate=20180618 0427
+description=customerticketingc4cintegrationatddtests
+group.id=de.hybris.platform
+module.name=platform-module
+name=customerticketingc4cintegrationatddtests
+releasedate=20180607 0945
+vendor=hybris
+version=18.08
+version.api=18.08.0
