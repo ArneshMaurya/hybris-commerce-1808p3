@@ -21,7 +21,6 @@ hs_err_pid*
 hybris/bin/*
 !hybris/bin/custom/
 gensrc/
-jalo/
 build.xml
 velocity.log
 hmc.xsd
