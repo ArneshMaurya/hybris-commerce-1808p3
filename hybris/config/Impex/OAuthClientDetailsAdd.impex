@@ -1,0 +1,3 @@
+
+INSERT_UPDATE OAuthClientDetails; clientId [unique = true]; resourceIds; scope ; authorizedGrantTypes                                         ; clientSecret; authorities
+                                ; trainHero               ; hybris     ; basic ; authorization_code,refresh_token,password,client_credentials ; trainHero   ; ROLE_TRUSTED_CLIENT
