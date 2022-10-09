@@ -40,25 +40,6 @@ hybris-Mobile-Apps-SDK/
 hybris-sbg/
 installer/
 licenses/
-hybris/bin/ext-accelerator/
-hybris/bin/ext-addon/
-hybris/bin/ext-atdd/
-hybris/bin/ext-atddtests/
-hybris/bin/ext-backoffice/
-hybris/bin/ext-channel/
-hybris/bin/ext-cockpit/
-hybris/bin/ext-commerce/
-hybris/bin/ext-content/
-hybris/bin/ext-customer-experience/
-hybris/bin/ext-data/
-hybris/bin/ext-eventtracking/
-hybris/bin/ext-integration/
-hybris/bin/ext-platform-backoffice/
-hybris/bin/ext-platform-optional/
-hybris/bin/ext-smartedit/
-hybris/bin/ext-supportability/
-hybris/bin/ext-template/
-hybris/bin/ext-webservices/
 ###############
 # Hybris Data #
 ###############
@@ -120,3 +101,5 @@ build
 # Exceptions #
 ##############
 # !xxx.jar
+solr
+hybris/bin/ext-atdd/atddengine/log4j-config.properties
