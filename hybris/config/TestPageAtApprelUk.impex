@@ -1,0 +1,61 @@
+UPDATE GenericItem[processor = de.hybris.platform.commerceservices.impex.impl.ConfigPropertyImportProcessor]; pk[unique = true]
+
+$contentCatalog=apparel-ukContentCatalog
+$contentCV=catalogVersion(CatalogVersion.catalog(Catalog.id[default=$contentCatalog]),CatalogVersion.version[default=Online])[default=$contentCatalog:Online]
+$productCatalog=apparelProductCatalog
+$productCatalogName=Apparel Product Catalog
+$productCV=catalogVersion(catalog(id[default=$productCatalog]),version[default='Online'])[unique=true,default=$productCatalog:Online]
+$lang=en
+
+INSERT_UPDATE PageTemplate;$contentCV[unique=true];uid[unique=true];name;frontendTemplateName;restrictedPageTypes(code);active[default=true]
+                          ;;TestPageTemplate;Test Page Template;test/testLayoutPage;ContentPage
+
+INSERT_UPDATE ContentSlotName;name[unique=true];template(uid,$contentCV)[unique=true][default='TestPageTemplate'];validComponentTypes(code);compTypeGroup(code)
+                             ;TopHeaderSlot;;;wide
+                             ;SiteLogo;;;logo
+                             ;HeaderLinks;;;headerlinks
+                             ;SearchBox;;;searchbox
+                             ;MiniCart;;;minicart
+                             ;NavigationBar;;;navigation
+                             ;testParagraph;;;wide
+                             ;Footer;;;footer
+
+INSERT_UPDATE ContentPage;$contentCV[unique=true];uid[unique=true];name;masterTemplate(uid,$contentCV);label;defaultPage[default='true'];approvalStatus(code)[default='approved'];homepage[default='false']
+                         ;;testContentPage;Test Content Page;TestPageTemplate;testCMSPage
+
+INSERT_UPDATE ContentSlotForTemplate;$contentCV[unique=true];uid[unique=true];position[unique=true];pageTemplate(uid,$contentCV)[unique=true][default='TestPageTemplate'];contentSlot(uid,$contentCV)[unique=true];allowOverwrite
+                                    ;;SiteLogo-TestPage;SiteLogo;;SiteLogoSlot;true
+                                    ;;HomepageLink-TestPage;HomepageNavLink;;HomepageNavLinkSlot;true
+                                    ;;NavigationBar-TestPage;NavigationBar;;NavigationBarSlot;true
+                                    ;;MiniCart-TestPage;MiniCart;;MiniCartSlot;true
+                                    ;;Footer-TestPage;Footer;;FooterSlot;true
+                                    ;;HeaderLinks-TestPage;HeaderLinks;;HeaderLinksSlot;true
+                                    ;;SearchBox-TestPage;SearchBox;;SearchBoxSlot;true
+                                    ;;TopHeaderSlot-TestPage;TopHeaderSlot;;TopHeaderSlot;true
+                                    ;;BottomHeaderSlot-TestPage;BottomHeaderSlot;;BottomHeaderSlot;true
+                                    ;;testParagraphSlot-TestPage;testParagraph;;testParagraphSlot;true
+
+INSERT_UPDATE CMSParagraphComponent;$contentCV[unique=true];uid[unique=true];name;&componentRef;;;;content;
+                                   ;;testHeadingComponent;Test Heading information;testHeadingComponent;;;;This is Test Page;
+
+INSERT_UPDATE CMSLinkComponent;$contentCV[unique=true];uid[unique=true];name;url;category(code, $productCV);target(code)[default='sameWindow'];;
+                              ;;testLink;Test Link;/test;;;;
+
+INSERT_UPDATE ContentSlot;$contentCV[unique=true];uid[unique=true];name;active;cmsComponents(uid,$contentCV)
+                         ;;testParagraphSlot;Test Paragraph Slot;true;testHeadingComponent
+
+INSERT_UPDATE CMSNavigationNode;uid[unique=true];$contentCV[unique=true];name;&nodeRef;
+                               ;TestNavigationNavNode;;Test Navigation Node;TestNavigationNavNode
+
+INSERT_UPDATE CMSNavigationNode;uid[unique=true];$contentCV[unique=true];name;parent(uid, $contentCV);&nodeRef;children(uid,$contentCV)
+                               ;ApparelUKCategoryNavNode;;Categories;ApparelUKNavNode;ApparelUKCategoryNavNode;BrandsNavNode,StreetwearNavigationNode,SnowNavigationNode,AccessoriesNavigationNode,StreetwearYouthNavNode,TestNavigationNavNode
+
+INSERT_UPDATE CMSNavigationEntry;uid[unique=true];$contentCV[unique=true];name;navigationNode(&nodeRef);item(CMSLinkComponent.uid,CMSLinkComponent.$contentCV);
+                                ;TestNavNodeEntry;;Test Navigation Node Entry;TestNavigationNavNode;testLink;
+
+UPDATE CMSNavigationNode;$contentCV[unique=true];uid[unique=true];title[lang=en]
+                        ;;TestNavigationNavNode;"Test"
+UPDATE CMSLinkComponent;$contentCV[unique=true];uid[unique=true];linkName[lang=en]
+                       ;;testLink;"Test"
+
+

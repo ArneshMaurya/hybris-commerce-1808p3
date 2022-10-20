@@ -1,39 +1,46 @@
 <%@ page trimDirectiveWhitespaces="true"%>
-<%@ taglib prefix="spring" uri="http://www.sprin    gframework.org/tags"%>
-<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
-<%@ taglib prefix="formElement" tagdir="/WEB-INF/tags/responsive/formElement" %>
-<%@ taglib prefix="ycommerce" uri="http://hybris.com/tld/ycommercetags" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="template" tagdir="/WEB-INF/tags/responsive/template"%>
+<%@ taglib prefix="cms" uri="http://hybris.com/tld/cmstags"%>
 
-<!DOCTYPE html>
-<html>
-<script>
-// Check browser support
-if (typeof(Storage) !== "undefined") {
-  // Store
-  localStorage.setItem("lastname", "Smith");
-  // Retrieve
-  document.getElementById("result").innerHTML = localStorage.getItem("lastname");
-} else {
-  document.getElementById("result").innerHTML = "Sorry, your browser does not support Web Storage...";
-}
-</script>
-<body>
+<template:page pageTitle="${pageTitle}">
 
-<h1>The input formaction attribute</h1>
-<div id="result"></div>
-<p>The formaction attribute specifies the URL of a file that will process the input when the form is submitted.</p>
-
-<form action="/action_page.php">
-  <label for="fname">First name:</label>
-  <input type="text" id="fname" name="fname"><br><br>
-  <label for="lname">Last name:</label>
-  <input type="text" id="lname" name="lname"><br><br>
-  <input type="submit" value="Submit">
-  <input type="submit" formaction="" value="Submit as Admin">
-</form>
-
-</body>
-</html>
-
-
+  <div class="yCmsComponent login-right-content-component">
+    <div class="login-section">
+      <div class="login-page__headline">
+        Returning Customer
+      </div>
+      <p>
+        Already have an account? Sign in to retrieve your account settings.
+      </p>
+      <form id="loginForm" action="/trainingstorefront/en/view/myLogin"
+      method="post">
+        <div class="form-group">
+          <label class="control-label " for="j_username">
+            Email Address
+          </label>
+          <input id="j_username" name="j_username" class=" form-control" type="text"
+          value="">
+        </div>
+        <div class="form-group">
+          <label class="control-label " for="j_password">
+            Password
+          </label>
+          <input id="j_password" name="j_password" class="form-control" type="password"
+          value="" autocomplete="off">
+        </div>
+        <div class="forgotten-password">
+          <a href="#" data-link="/trainingstorefront/en/login/pw/request" class="js-password-forgotten"
+          data-cbox-title="Reset Password">
+            Forgot your password?
+          </a>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">
+          Log In
+        </button>
+        <div>
+          <input type="hidden" name="CSRFToken" value="82c52b86-5079-4095-8a6d-40bdcba74022">
+        </div>
+      </form>
+    </div>
+  </div>
+</template:page>
